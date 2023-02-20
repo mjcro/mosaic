@@ -1,0 +1,8 @@
+/.idea
+/target
+Foo.java
+*.class
+*.iml
+/*.txt
+/*.log
+/pom.xml.versionsBackup
