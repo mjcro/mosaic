@@ -1,7 +1,7 @@
 package org.github.mjcro.mosaic;
 
 public interface KeySpec {
-    String getName();
+    int getTypeId();
 
     Class<?> getDataClass();
 

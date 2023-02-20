@@ -6,12 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 public interface TypeHandler {
-    void create(Connection connection, String tablePrefix, Map<KeySpec, List<Object>> values);
+    void create(Connection connection, String tablePrefix, long id, Map<KeySpec, List<Object>> values);
 
-    <ID, Key extends Enum<Key> & KeySpec> List<Entity<ID, Key>> findById(
+    void update(Connection connection, String tablePrefix, long id, Map<KeySpec, List<Object>> values);
+
+    <Key extends Enum<Key> & KeySpec> Map<Long, Map<Key, List<Object>>> findById(
             Connection connection,
             String tablePrefix,
-            Collection<ID> ids,
+            Collection<Long> ids,
             Collection<Key> keys
     );
 }
