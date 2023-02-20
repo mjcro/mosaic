@@ -3,7 +3,7 @@ package org.github.mjcro.mosaic;
 import java.util.List;
 import java.util.Map;
 
-public class Entity<Key extends Enum<Key> & KeySpec> {
+public class Entity<Key> {
     private final long id;
     private final Map<Key, List<Object>> values;
 

@@ -1,19 +1,20 @@
 package org.github.mjcro.mosaic;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 public interface TypeHandler {
-    void create(Connection connection, String tablePrefix, long id, Map<KeySpec, List<Object>> values);
+    void create(Connection connection, String tablePrefix, long id, Map<KeySpec, List<Object>> values) throws SQLException;
 
-    void update(Connection connection, String tablePrefix, long id, Map<KeySpec, List<Object>> values);
+    void update(Connection connection, String tablePrefix, long id, Map<KeySpec, List<Object>> values) throws SQLException;
 
-    <Key extends Enum<Key> & KeySpec> Map<Long, Map<Key, List<Object>>> findById(
+    <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findById(
             Connection connection,
             String tablePrefix,
             Collection<Long> ids,
             Collection<Key> keys
-    );
+    ) throws SQLException;
 }
