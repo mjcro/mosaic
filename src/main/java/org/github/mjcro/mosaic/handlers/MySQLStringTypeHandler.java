@@ -14,7 +14,7 @@ public class MySQLStringTypeHandler extends MySQLAbstractTypeHandler {
         if (value instanceof CharSequence) {
             stmt.setString(offset, value.toString());
         } else {
-            throw new SQLException("Expected string"); // TODO add exception for this and handle nulls
+            throw new UnexpectedValueException(value);
         }
     }
 

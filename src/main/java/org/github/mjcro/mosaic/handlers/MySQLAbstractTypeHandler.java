@@ -22,7 +22,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     }
 
     public String getTableName(final String tablePrefix) {
-        return "`" + tablePrefix + commonTableName;
+        return "`" + tablePrefix + commonTableName + "`";
     }
 
     protected abstract void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException;
@@ -38,7 +38,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     ) throws SQLException {
         StringBuilder sb = new StringBuilder();
         sb.append("INSERT INTO ").append(getTableName(tablePrefix));
-        sb.append(" (`linkId`,`typeId`,");
+        sb.append(" (`linkId`,`typeId`");
         for (String column : valueColumns) {
             sb.append(",").append(column);
         }
@@ -122,7 +122,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
             }
 
             try (ResultSet rs = stmt.executeQuery()) {
-                if (!rs.isBeforeFirst()) {
+                if (rs.isBeforeFirst()) {
                     while (rs.next()) {
                         if (rs.isAfterLast()) {
                             break;
@@ -164,6 +164,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
             }
             sb.append("?");
         }
+        sb.append(")");
 
         int offset = 1;
         try (PreparedStatement stmt = connection.prepareStatement(sb.toString())) {
