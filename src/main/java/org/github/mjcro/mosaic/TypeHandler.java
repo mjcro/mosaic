@@ -11,7 +11,7 @@ public interface TypeHandler {
 
     void update(Connection connection, String tablePrefix, long id, Map<KeySpec, List<Object>> values) throws SQLException;
 
-    <Key> void delete(Connection connection, String tablePrefix, long id, Collection<Key> keys) throws SQLException;
+    <Key extends KeySpec> void delete(Connection connection, String tablePrefix, long id, Collection<Key> keys) throws SQLException;
 
     <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findById(
             Connection connection,

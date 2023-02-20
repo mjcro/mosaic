@@ -11,4 +11,12 @@ public class Entity<Key> {
         this.id = id;
         this.values = values;
     }
+
+    public long getId() {
+        return id;
+    }
+
+    public Map<Key, List<Object>> getValues() {
+        return values;
+    }
 }

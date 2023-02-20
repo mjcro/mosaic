@@ -150,13 +150,30 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     }
 
     @Override
-    public <Key> void delete(
+    public <Key extends KeySpec> void delete(
             Connection connection,
             String tablePrefix,
             long id,
             Collection<Key> keys
     ) throws SQLException {
-        // TODO
+        StringBuilder sb = new StringBuilder();
+        sb.append("DELETE FROM ").append(getTableName(tablePrefix)).append(" WHERE `linkId`=? AND `typeId` IN (");
+        for (int i = 0; i < keys.size(); i++) {
+            if (i > 0) {
+                sb.append(",");
+            }
+            sb.append("?");
+        }
+
+        int offset = 1;
+        try (PreparedStatement stmt = connection.prepareStatement(sb.toString())) {
+            stmt.setLong(offset++, id);
+            for (Key key : keys) {
+                stmt.setInt(offset++, key.getTypeId());
+            }
+
+            stmt.executeUpdate();
+        }
     }
 
     @Override
