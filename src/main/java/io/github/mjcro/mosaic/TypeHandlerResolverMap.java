@@ -30,6 +30,14 @@ public class TypeHandlerResolverMap implements TypeHandlerResolver {
         return this;
     }
 
+    /**
+     * Modifies current resolver adding new type handler.
+     *
+     * @param clazz  Class to add type handler for.
+     * @param layout SQL layout to use.
+     * @param mapper SQL data mapper to use.
+     * @return Self.
+     */
     public TypeHandlerResolverMap with(Class<?> clazz, Layout layout, Mapper mapper) {
         return this.with(clazz, new LayoutAwareTypeHandler(layout, mapper));
     }
