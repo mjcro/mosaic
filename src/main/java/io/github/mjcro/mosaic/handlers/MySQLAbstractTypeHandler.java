@@ -1,13 +1,17 @@
-package org.github.mjcro.mosaic.handlers;
+package io.github.mjcro.mosaic.handlers;
 
-import org.github.mjcro.mosaic.KeySpec;
-import org.github.mjcro.mosaic.TypeHandler;
+import io.github.mjcro.mosaic.KeySpec;
+import io.github.mjcro.mosaic.TypeHandler;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     private final String commonTableName;
@@ -30,7 +34,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     protected abstract Object readObjectValue(ResultSet resultSet, int offset) throws SQLException;
 
     @Override
-    public void create(
+    public void store(
             final Connection connection,
             final String tablePrefix,
             final long id,
@@ -78,7 +82,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     public <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findById(
             final Connection connection,
             final String tablePrefix,
-            final Collection<Long> ids,
+            final Collection<Long> linkIds,
             final Collection<Key> keys
     ) throws SQLException {
         HashMap<Integer, Key> reverseMap = new HashMap<>();
@@ -94,7 +98,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
         sb.append(" FROM").append(getTableName(tablePrefix)).append(" WHERE");
 
         sb.append(" `linkId` IN (");
-        for (int i = 0; i < ids.size(); i++) {
+        for (int i = 0; i < linkIds.size(); i++) {
             if (i > 0) {
                 sb.append(",");
             }
@@ -114,7 +118,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
         Map<Long, Map<Key, List<Object>>> response = new HashMap<>();
         int offset = 1;
         try (PreparedStatement stmt = connection.prepareStatement(sb.toString())) {
-            for (final Long id : ids) {
+            for (final Long id : linkIds) {
                 stmt.setLong(offset++, id);
             }
             for (final Key key : keys) {
@@ -177,7 +181,6 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
         }
     }
 
-    @Override
     public void update(
             Connection connection,
             String tablePrefix,
