@@ -1,4 +1,4 @@
-package org.github.mjcro.mosaic;
+package io.github.mjcro.mosaic;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -6,14 +6,14 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 @FunctionalInterface
-public interface ConnectionSupplier {
+public interface ConnectionProvider {
     /**
      * Wraps given Java supplier into ConnectionSupplier wrapper.
      *
      * @param supplier Java supplier.
-     * @return ConnectionSupplier instance.
+     * @return ConnectionProvider instance.
      */
-    static ConnectionSupplier ofSupplier(final Supplier<Connection> supplier) {
+    static ConnectionProvider ofSupplier(final Supplier<Connection> supplier) {
         Objects.requireNonNull(supplier, "supplier");
         return supplier::get;
     }
