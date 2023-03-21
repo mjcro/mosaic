@@ -48,15 +48,13 @@ class MySQLStringTypeHandlerTest {
                 .build();
         handler.store(connection, "common", 2, data);
 
-        Map<Long, Map<Key, List<Object>>> found = handler.findByLinkId(connection, "common", Collections.singletonList(21L), Collections.singleton(Key.LAST_NAME));
+        Map<Key, List<Object>> found = handler.findByLinkId(connection, "common", 21, Collections.singleton(Key.LAST_NAME));
         Assertions.assertTrue(found.isEmpty());
 
-        found = handler.findByLinkId(connection, "common", Collections.singletonList(43L), Collections.singleton(Key.LAST_NAME));
+        found = handler.findByLinkId(connection, "common", 43, Collections.singleton(Key.LAST_NAME));
         Assertions.assertFalse(found.isEmpty());
         Assertions.assertEquals(1, found.size());
-        Assertions.assertFalse(found.get(43L).isEmpty());
-        Assertions.assertEquals(1, found.get(43L).size());
-        Assertions.assertEquals("Williams", found.get(43L).get(Key.LAST_NAME).get(0));
+        Assertions.assertEquals("Williams", found.get(Key.LAST_NAME).get(0));
     }
 
     @Test
@@ -68,7 +66,7 @@ class MySQLStringTypeHandlerTest {
         handler.store(connection, "common", 43, data);
 
         handler.delete(connection, "common", 43, Collections.singletonList(Key.FIRST_NAME));
-        Map<Long, Map<Key, List<Object>>> found = handler.findByLinkId(connection, "common", Collections.singletonList(43L), Collections.singleton(Key.FIRST_NAME));
+        Map<Key, List<Object>> found = handler.findByLinkId(connection, "common", 43, Collections.singleton(Key.FIRST_NAME));
         Assertions.assertTrue(found.isEmpty());
 
     }
