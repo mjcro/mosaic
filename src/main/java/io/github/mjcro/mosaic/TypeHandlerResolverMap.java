@@ -1,6 +1,9 @@
 package io.github.mjcro.mosaic;
 
 import io.github.mjcro.mosaic.exceptions.UnableToResolveTypeHandlerException;
+import io.github.mjcro.mosaic.handlers.sql.Layout;
+import io.github.mjcro.mosaic.handlers.sql.LayoutAwareTypeHandler;
+import io.github.mjcro.mosaic.handlers.sql.Mapper;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -25,6 +28,10 @@ public class TypeHandlerResolverMap implements TypeHandlerResolver {
                 Objects.requireNonNull(typeHandler, "typeHandler")
         );
         return this;
+    }
+
+    public TypeHandlerResolverMap with(Class<?> clazz, Layout layout, Mapper mapper) {
+        return this.with(clazz, new LayoutAwareTypeHandler(layout, mapper));
     }
 
     @Override

@@ -1,13 +1,14 @@
-package io.github.mjcro.mosaic.handlers;
+package io.github.mjcro.mosaic.handlers.sql.mappers;
 
 import io.github.mjcro.mosaic.KeySpec;
+import io.github.mjcro.mosaic.TypeHandler;
+import io.github.mjcro.mosaic.handlers.sql.LayoutAwareTypeHandler;
+import io.github.mjcro.mosaic.handlers.sql.mysql.MySqlMinimalLayout;
 import io.github.mjcro.mosaic.util.EnumMapBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,15 +17,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@Execution(ExecutionMode.SAME_THREAD)
-class MySQLStringTypeHandlerTest {
+class StringMapperTest {
     private Connection connection;
-    private MySQLStringTypeHandler handler;
+    private TypeHandler handler;
 
     @BeforeEach
     public void setup() throws SQLException {
         connection = DriverManager.getConnection("jdbc:h2:mem:test;INIT=RUNSCRIPT FROM 'src/test/resources/string.sql'");
-        handler = new MySQLStringTypeHandler();
+        handler = new LayoutAwareTypeHandler(MySqlMinimalLayout.INSTANCE, new StringMapper());
     }
 
     @AfterEach

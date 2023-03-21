@@ -12,7 +12,7 @@ public interface Layout {
     <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findByLinkId(
             final Mapper mapper,
             final Connection connection,
-            final String tablePrefix,
+            final String tableName,
             final Collection<Long> linkIds,
             final Collection<Key> keys
     ) throws SQLException;
@@ -20,7 +20,7 @@ public interface Layout {
     void store(
             final Mapper mapper,
             final Connection connection,
-            final String tablePrefix,
+            final String tableName,
             final long linkId,
             final Map<? extends KeySpec, List<Object>> values
     ) throws SQLException;

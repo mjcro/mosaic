@@ -1,4 +1,4 @@
-package io.github.mjcro.mosaic.handlers;
+package io.github.mjcro.mosaic.handlers.sql.mappers;
 
 import io.github.mjcro.mosaic.exceptions.UnexpectedValueException;
 
@@ -7,13 +7,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 
-public class MySQLInstantMillisTypeHandler extends MySQLAbstractTypeHandler {
-    public MySQLInstantMillisTypeHandler() {
-        super("Instant", "`value`");
+public class InstantMillisMapper extends AbstractSingleColumnValueMapper {
+    @Override
+    public String getCommonName() {
+        return "Instant";
     }
 
     @Override
-    protected void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException {
+    public void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException {
         if (value instanceof Instant) {
             stmt.setLong(offset, ((Instant) value).toEpochMilli());
         } else {
@@ -22,7 +23,7 @@ public class MySQLInstantMillisTypeHandler extends MySQLAbstractTypeHandler {
     }
 
     @Override
-    protected Object readObjectValue(ResultSet resultSet, int offset) throws SQLException {
+    public Object readObjectValue(ResultSet resultSet, int offset) throws SQLException {
         return Instant.ofEpochMilli(resultSet.getLong(offset));
     }
 }

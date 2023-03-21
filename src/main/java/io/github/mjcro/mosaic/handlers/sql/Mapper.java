@@ -6,6 +6,16 @@ import java.sql.SQLException;
 
 public interface Mapper {
     /**
+     * @return Table common name.
+     */
+    String getCommonName();
+
+    /**
+     * @return Column names.
+     */
+    String[] getColumnNames();
+
+    /**
      * Set placeholder values into given statement.
      *
      * @param stmt   Statement to set placeholders into.

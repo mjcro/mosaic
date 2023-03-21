@@ -13,16 +13,14 @@ import java.util.Objects;
 public class LayoutAwareTypeHandler implements TypeHandler {
     private final Layout layout;
     private final Mapper mapper;
-    private final String commonTableName;
 
-    public LayoutAwareTypeHandler(Layout layout, Mapper mapper, String commonTableName) {
+    public LayoutAwareTypeHandler(Layout layout, Mapper mapper) {
         this.layout = Objects.requireNonNull(layout, "layout");
         this.mapper = Objects.requireNonNull(mapper, "mapper");
-        this.commonTableName = Objects.requireNonNull(commonTableName, "commonTableName");
     }
 
     public String getTableName(String tablePrefix) {
-        return Objects.requireNonNull(tablePrefix, "prefix") + commonTableName;
+        return Objects.requireNonNull(tablePrefix, "prefix") + mapper.getCommonName();
     }
 
     @Override

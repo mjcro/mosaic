@@ -2,7 +2,7 @@ package io.github.mjcro.mosaic.example.mosaic;
 
 import io.github.mjcro.mosaic.example.domain.Amount;
 import io.github.mjcro.mosaic.exceptions.UnexpectedValueException;
-import io.github.mjcro.mosaic.handlers.MySQLAbstractTypeHandler;
+import io.github.mjcro.mosaic.handlers.sql.Mapper;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
@@ -10,13 +10,21 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Currency;
 
-public class MySQLAmountTypeHandler extends MySQLAbstractTypeHandler {
-    public MySQLAmountTypeHandler() {
-        super("Amount", "`currencyCode`, `amount`");
+public class AmountMapper implements Mapper {
+    private static final String[] columns = new String[]{"`currencyCode`", "`amount`"};
+
+    @Override
+    public String getCommonName() {
+        return "Amount";
     }
 
     @Override
-    protected void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException {
+    public String[] getColumnNames() {
+        return columns;
+    }
+
+    @Override
+    public void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException {
         if (value instanceof Amount) {
             Amount a = (Amount) value;
             stmt.setString(offset, a.getCurrency().getCurrencyCode());
@@ -27,7 +35,7 @@ public class MySQLAmountTypeHandler extends MySQLAbstractTypeHandler {
     }
 
     @Override
-    protected Object readObjectValue(ResultSet resultSet, int offset) throws SQLException {
+    public Object readObjectValue(ResultSet resultSet, int offset) throws SQLException {
         String currencyCode = resultSet.getString(offset);
         BigDecimal amount = resultSet.getBigDecimal(offset + 1);
         return new Amount(Currency.getInstance(currencyCode), amount);

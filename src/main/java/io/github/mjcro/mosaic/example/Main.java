@@ -5,12 +5,13 @@ import io.github.mjcro.mosaic.DataProvider;
 import io.github.mjcro.mosaic.TypeHandlerResolver;
 import io.github.mjcro.mosaic.TypeHandlerResolverMap;
 import io.github.mjcro.mosaic.example.domain.Amount;
+import io.github.mjcro.mosaic.example.mosaic.AmountMapper;
 import io.github.mjcro.mosaic.example.mosaic.MoneyTransferRepository;
 import io.github.mjcro.mosaic.example.mosaic.MoneyTransferSpec;
-import io.github.mjcro.mosaic.example.mosaic.MySQLAmountTypeHandler;
-import io.github.mjcro.mosaic.handlers.MySQLInstantSecondsTypeHandler;
-import io.github.mjcro.mosaic.handlers.MySQLLongTypeHandler;
-import io.github.mjcro.mosaic.handlers.MySQLStringTypeHandler;
+import io.github.mjcro.mosaic.handlers.sql.mappers.InstantSecondsMapper;
+import io.github.mjcro.mosaic.handlers.sql.mappers.LongMapper;
+import io.github.mjcro.mosaic.handlers.sql.mappers.StringMapper;
+import io.github.mjcro.mosaic.handlers.sql.mysql.MySqlMinimalLayout;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -27,10 +28,10 @@ public class Main {
 
         // Configuring type handlers
         TypeHandlerResolver typeHandlerResolver = new TypeHandlerResolverMap()
-                .with(Long.class, new MySQLLongTypeHandler())
-                .with(String.class, new MySQLStringTypeHandler())
-                .with(Instant.class, new MySQLInstantSecondsTypeHandler())
-                .with(Amount.class, new MySQLAmountTypeHandler());
+                .with(Long.class, MySqlMinimalLayout.INSTANCE, new LongMapper())
+                .with(String.class, MySqlMinimalLayout.INSTANCE, new StringMapper())
+                .with(Instant.class, MySqlMinimalLayout.INSTANCE, new InstantSecondsMapper())
+                .with(Amount.class, MySqlMinimalLayout.INSTANCE, new AmountMapper());
 
         // Configuring data provider
         DataProvider<MoneyTransferSpec> dataProvider = new DataProvider<>(connectionProvider, typeHandlerResolver);

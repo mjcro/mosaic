@@ -1,4 +1,4 @@
-package io.github.mjcro.mosaic.handlers;
+package io.github.mjcro.mosaic.handlers.sql.mappers;
 
 import io.github.mjcro.mosaic.exceptions.UnexpectedValueException;
 
@@ -6,13 +6,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class MySQLLongTypeHandler extends MySQLAbstractTypeHandler {
-    public MySQLLongTypeHandler() {
-        super("Long", "`value`");
+public class LongMapper extends AbstractSingleColumnValueMapper {
+    @Override
+    public String getCommonName() {
+        return "Long";
     }
 
     @Override
-    protected void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException {
+    public void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException {
         if (value instanceof Long) {
             stmt.setLong(offset, (Long) value);
         } else {
@@ -21,7 +22,7 @@ public class MySQLLongTypeHandler extends MySQLAbstractTypeHandler {
     }
 
     @Override
-    protected Object readObjectValue(ResultSet resultSet, int offset) throws SQLException {
+    public Object readObjectValue(ResultSet resultSet, int offset) throws SQLException {
         return resultSet.getLong(offset);
     }
 }
