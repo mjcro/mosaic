@@ -68,35 +68,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         return grouped;
     }
 
-    public long create(String tablePrefix, Map<Key, List<Object>> values) throws SQLException {
-        // Grouping by class
-        Map<Class<?>, Map<Key, List<Object>>> groupedByClass = groupByClass(values);
-
-        // Preparing type handlers and verifying that they are present
-        HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
-        for (Class<?> clazz : groupedByClass.keySet()) {
-            TypeHandler handler = registeredTypes.resolve(clazz);
-            typeHandlers.put(clazz, handler);
-        }
-
-        try (Connection connection = connectionSupplier.getConnection()) {
-            // Somehow creating ID
-            long id = 0L; // TODO
-
-            // Saving other entities
-            for (Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
-                typeHandlers.get(entry.getKey()).create(connection,
-                        tablePrefix,
-                        id,
-                        new HashMap<>(entry.getValue())
-                );
-            }
-
-            return id;
-        }
-    }
-
-    public void update(String tablePrefix, long id, Map<Key, List<Object>> values) throws SQLException {
+    public void store(String tablePrefix, long id, Map<Key, List<Object>> values) throws SQLException {
         // Grouping by class
         Map<Class<?>, Map<Key, List<Object>>> groupedByClass = groupByClass(values);
 
