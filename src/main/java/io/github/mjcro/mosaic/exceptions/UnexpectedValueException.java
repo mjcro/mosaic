@@ -1,4 +1,4 @@
-package org.github.mjcro.mosaic.exceptions;
+package io.github.mjcro.mosaic.exceptions;
 
 /**
  * Exception thrown by type handlers when unexpected value
