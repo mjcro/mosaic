@@ -1,8 +1,6 @@
-package org.github.mjcro.mosaic;
+package org.github.mjcro.mosaic.exceptions;
 
-import java.sql.SQLException;
-
-public class UnableToResolveTypeHandlerException extends SQLException {
+public class UnableToResolveTypeHandlerException extends MosaicException {
     public UnableToResolveTypeHandlerException(final Class<?> clazz) {
         super(
                 clazz == null

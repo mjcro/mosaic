@@ -1,12 +1,10 @@
-package org.github.mjcro.mosaic.handlers;
-
-import java.sql.SQLException;
+package org.github.mjcro.mosaic.exceptions;
 
 /**
  * Exception thrown by type handlers when unexpected value
  * is received.
  */
-public class UnexpectedValueException extends SQLException {
+public class UnexpectedValueException extends MosaicException {
     /**
      * Constructs exception.
      *

@@ -1,5 +1,7 @@
 package org.github.mjcro.mosaic;
 
+import org.github.mjcro.mosaic.exceptions.UnableToResolveTypeHandlerException;
+
 @FunctionalInterface
 public interface TypeHandlerResolver {
     /**

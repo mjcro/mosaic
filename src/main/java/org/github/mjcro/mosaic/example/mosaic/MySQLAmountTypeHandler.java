@@ -2,7 +2,7 @@ package org.github.mjcro.mosaic.example.mosaic;
 
 import org.github.mjcro.mosaic.example.domain.Amount;
 import org.github.mjcro.mosaic.handlers.MySQLAbstractTypeHandler;
-import org.github.mjcro.mosaic.handlers.UnexpectedValueException;
+import org.github.mjcro.mosaic.exceptions.UnexpectedValueException;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;

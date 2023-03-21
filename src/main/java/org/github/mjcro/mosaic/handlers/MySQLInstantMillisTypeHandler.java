@@ -1,5 +1,7 @@
 package org.github.mjcro.mosaic.handlers;
 
+import org.github.mjcro.mosaic.exceptions.UnexpectedValueException;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
