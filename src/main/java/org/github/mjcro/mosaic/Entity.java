@@ -23,6 +23,10 @@ public class Entity<Key> {
     }
 
     public Optional<Object> getSingle(Key key) {
-        return Optional.ofNullable(values.get(key));
+        List<Object> objects = values.get(key);
+        if (objects == null || objects.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(objects.get(0));
     }
 }

@@ -25,7 +25,7 @@ public enum MoneyTransferSpec implements KeySpec {
     private final int typeId;
     private final Class<?> dataClass;
 
-    private MoneyTransferSpec(final int typeId, final Class<?> clazz) {
+    MoneyTransferSpec(final int typeId, final Class<?> clazz) {
         this.typeId = typeId;
         this.dataClass = clazz;
     }

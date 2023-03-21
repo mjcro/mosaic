@@ -97,4 +97,20 @@ public class MoneyTransferImpl implements MoneyTransfer {
     public Optional<Instant> getProcessedAt() {
         return Optional.ofNullable(processed);
     }
+
+    @Override
+    public String toString() {
+        return "ID: " + getId() + "\n"
+                + "Description: " + getDescription() + "\n"
+                + "Beneficiary: " + getBeneficiaryName() + "\n"
+                + "Created: " + getCreatedAt() + "\n"
+                + "Processed: " + getProcessedAt() + "\n"
+                + "Scheduled: " + getScheduledAt() + "\n"
+                + "Sender: " + getSenderId() + "\n"
+                + "Recipient: " + getRecipientId() + "\n"
+                + "Sent amount: " + getAmountToSend() + "\n"
+                + "Received amount: " + getAmountToReceive() + "\n"
+                + "Fee amount: " + getFeeAmount() + "\n"
+                + "Buy rate: " + getBuyRate() + "\n";
+    }
 }
