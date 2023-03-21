@@ -105,7 +105,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         HashMap<Long, Map<Key, List<Object>>> combined = new HashMap<>();
         try (Connection connection = connectionProvider.getConnection()) {
             for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
-                Map<Long, Map<Key, List<Object>>> data = entry.getValue().findById(
+                Map<Long, Map<Key, List<Object>>> data = entry.getValue().findByLinkId(
                         connection,
                         tablePrefix,
                         identifiers,

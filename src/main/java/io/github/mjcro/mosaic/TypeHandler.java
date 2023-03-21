@@ -20,7 +20,7 @@ public interface TypeHandler {
      * @return Matched records.
      * @throws SQLException On database error.
      */
-    <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findById(
+    <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findByLinkId(
             Connection connection,
             String tablePrefix,
             Collection<Long> linkIds,

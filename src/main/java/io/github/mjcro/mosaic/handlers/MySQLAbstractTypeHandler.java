@@ -79,7 +79,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     }
 
     @Override
-    public <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findById(
+    public <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findByLinkId(
             final Connection connection,
             final String tablePrefix,
             final Collection<Long> linkIds,
