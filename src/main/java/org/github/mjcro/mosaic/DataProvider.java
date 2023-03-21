@@ -2,13 +2,27 @@ package org.github.mjcro.mosaic;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class DataProvider<Key extends Enum<Key> & KeySpec> {
-    private final Supplier<Connection> connectionSupplier = null; // TODO
-    private final Map<Class<?>, TypeHandler> registeredTypes = null; // TODO
+    private final Supplier<Connection> connectionSupplier;
+    private final TypeHandlerResolver registeredTypes;
+
+    public DataProvider(
+            final Supplier<Connection> connectionSupplier,
+            final TypeHandlerResolver typeHandlerResolver
+    ) {
+        this.connectionSupplier = Objects.requireNonNull(connectionSupplier, "connectionSupplier");
+        this.registeredTypes = Objects.requireNonNull(typeHandlerResolver, "registeredTypes");
+    }
 
     private Map<Class<?>, Map<Key, List<Object>>> groupByClass(Map<Key, List<Object>> values) {
         HashMap<Class<?>, Map<Key, List<Object>>> grouped = new HashMap<>();
@@ -51,10 +65,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
         for (Class<?> clazz : groupedByClass.keySet()) {
-            TypeHandler handler = registeredTypes.get(clazz);
-            if (handler == null) {
-                throw new SQLException("Foo"); // Create new exception for this
-            }
+            TypeHandler handler = registeredTypes.resolve(clazz);
             typeHandlers.put(clazz, handler);
         }
 
@@ -82,10 +93,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
         for (Class<?> clazz : groupedByClass.keySet()) {
-            TypeHandler handler = registeredTypes.get(clazz);
-            if (handler == null) {
-                throw new SQLException("Foo"); // Create new exception for this
-            }
+            TypeHandler handler = registeredTypes.resolve(clazz);
             typeHandlers.put(clazz, handler);
         }
 
@@ -108,10 +116,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
         for (Class<?> clazz : groupedByClass.keySet()) {
-            TypeHandler handler = registeredTypes.get(clazz);
-            if (handler == null) {
-                throw new SQLException("Foo"); // Create new exception for this
-            }
+            TypeHandler handler = registeredTypes.resolve(clazz);
             typeHandlers.put(clazz, handler);
         }
 
@@ -145,10 +150,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
         for (Class<?> clazz : groupedByClass.keySet()) {
-            TypeHandler handler = registeredTypes.get(clazz);
-            if (handler == null) {
-                throw new SQLException("Foo"); // Create new exception for this
-            }
+            TypeHandler handler = registeredTypes.resolve(clazz);
             typeHandlers.put(clazz, handler);
         }
 
