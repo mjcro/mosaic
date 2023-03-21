@@ -48,9 +48,12 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     public void store(
             final Connection connection,
             final String tablePrefix,
-            final long id,
+            final long linkId,
             final Map<? extends KeySpec, List<Object>> values
     ) throws SQLException {
+        // Deleting previous values
+        delete(connection, tablePrefix, linkId, values.keySet());
+
         StringBuilder sb = new StringBuilder();
         sb.append("INSERT INTO ").append(getTableName(tablePrefix));
         sb.append(" (`linkId`,`typeId`");
@@ -78,7 +81,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
         try (PreparedStatement stmt = connection.prepareStatement(sb.toString())) {
             for (Map.Entry<? extends KeySpec, List<Object>> entry : values.entrySet()) {
                 for (final Object value : entry.getValue()) {
-                    stmt.setLong(offset++, id);
+                    stmt.setLong(offset++, linkId);
                     stmt.setInt(offset++, entry.getKey().getTypeId());
                     setPlaceholdersValue(stmt, offset, value);
                     offset += valueColumns.length;
@@ -91,23 +94,6 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
 
     @Override
     public <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findByLinkId(
-            final Connection connection,
-            final String tablePrefix,
-            final Collection<Long> linkIds,
-            final Collection<Key> keys
-    ) throws SQLException {
-        return findByLinkId0(
-                (i, l, k, v) -> {
-                },
-                connection,
-                tablePrefix,
-                linkIds,
-                keys
-        );
-    }
-
-    protected <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findByLinkId0(
-            final ReadCallback<Key> readCallback,
             final Connection connection,
             final String tablePrefix,
             final Collection<Long> linkIds,
@@ -170,8 +156,6 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
                         Key key = reverseMap.get(rs.getInt(3));
                         Object value = readObjectValue(rs, 4);
 
-                        readCallback.onRead(incrementalId, linkId, key, value);
-
                         if (!response.containsKey(linkId)) {
                             response.put(linkId, new HashMap<>());
                         }
@@ -193,7 +177,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     public <Key extends KeySpec> void delete(
             Connection connection,
             String tablePrefix,
-            long id,
+            long linkId,
             Collection<Key> keys
     ) throws SQLException {
         StringBuilder sb = new StringBuilder();
@@ -208,7 +192,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
 
         int offset = 1;
         try (PreparedStatement stmt = connection.prepareStatement(sb.toString())) {
-            stmt.setLong(offset++, id);
+            stmt.setLong(offset++, linkId);
             for (Key key : keys) {
                 stmt.setInt(offset++, key.getTypeId());
             }
