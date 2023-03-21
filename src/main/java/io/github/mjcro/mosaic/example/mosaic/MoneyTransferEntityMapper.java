@@ -1,11 +1,11 @@
-package org.github.mjcro.mosaic.example.mosaic;
+package io.github.mjcro.mosaic.example.mosaic;
 
-import org.github.mjcro.mosaic.Entity;
-import org.github.mjcro.mosaic.EntityMapper;
-import org.github.mjcro.mosaic.example.domain.Amount;
-import org.github.mjcro.mosaic.example.domain.MoneyTransfer;
-import org.github.mjcro.mosaic.example.domain.MoneyTransferImpl;
-import org.github.mjcro.mosaic.util.EnumMapBuilder;
+import io.github.mjcro.mosaic.Entity;
+import io.github.mjcro.mosaic.EntityMapper;
+import io.github.mjcro.mosaic.example.domain.Amount;
+import io.github.mjcro.mosaic.example.domain.MoneyTransfer;
+import io.github.mjcro.mosaic.example.domain.MoneyTransferImpl;
+import io.github.mjcro.mosaic.util.EnumMapBuilder;
 
 import java.time.Instant;
 

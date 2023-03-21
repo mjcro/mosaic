@@ -1,16 +1,16 @@
-package org.github.mjcro.mosaic.example;
+package io.github.mjcro.mosaic.example;
 
-import org.github.mjcro.mosaic.ConnectionSupplier;
-import org.github.mjcro.mosaic.DataProvider;
-import org.github.mjcro.mosaic.TypeHandlerResolver;
-import org.github.mjcro.mosaic.TypeHandlerResolverMap;
-import org.github.mjcro.mosaic.example.domain.Amount;
-import org.github.mjcro.mosaic.example.mosaic.MoneyTransferRepository;
-import org.github.mjcro.mosaic.example.mosaic.MoneyTransferSpec;
-import org.github.mjcro.mosaic.example.mosaic.MySQLAmountTypeHandler;
-import org.github.mjcro.mosaic.handlers.MySQLInstantSecondsTypeHandler;
-import org.github.mjcro.mosaic.handlers.MySQLLongTypeHandler;
-import org.github.mjcro.mosaic.handlers.MySQLStringTypeHandler;
+import io.github.mjcro.mosaic.ConnectionProvider;
+import io.github.mjcro.mosaic.DataProvider;
+import io.github.mjcro.mosaic.TypeHandlerResolver;
+import io.github.mjcro.mosaic.TypeHandlerResolverMap;
+import io.github.mjcro.mosaic.example.domain.Amount;
+import io.github.mjcro.mosaic.example.mosaic.MoneyTransferRepository;
+import io.github.mjcro.mosaic.example.mosaic.MoneyTransferSpec;
+import io.github.mjcro.mosaic.example.mosaic.MySQLAmountTypeHandler;
+import io.github.mjcro.mosaic.handlers.MySQLInstantSecondsTypeHandler;
+import io.github.mjcro.mosaic.handlers.MySQLLongTypeHandler;
+import io.github.mjcro.mosaic.handlers.MySQLStringTypeHandler;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -23,7 +23,7 @@ public class Main {
             throw new IllegalArgumentException("Exactly one argument with database DSN expected");
         }
         String dsn = args[0];
-        ConnectionSupplier connectionSupplier = () -> DriverManager.getConnection(dsn);
+        ConnectionProvider connectionProvider = () -> DriverManager.getConnection(dsn);
 
         // Configuring type handlers
         TypeHandlerResolver typeHandlerResolver = new TypeHandlerResolverMap()
@@ -33,7 +33,7 @@ public class Main {
                 .with(Amount.class, new MySQLAmountTypeHandler());
 
         // Configuring data provider
-        DataProvider<MoneyTransferSpec> dataProvider = new DataProvider<>(connectionSupplier, typeHandlerResolver);
+        DataProvider<MoneyTransferSpec> dataProvider = new DataProvider<>(connectionProvider, typeHandlerResolver);
         dataProvider.test();
         System.out.println("Connection established");
 

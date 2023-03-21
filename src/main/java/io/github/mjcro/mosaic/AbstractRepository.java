@@ -1,4 +1,4 @@
-package org.github.mjcro.mosaic;
+package io.github.mjcro.mosaic;
 
 import java.util.Objects;
 

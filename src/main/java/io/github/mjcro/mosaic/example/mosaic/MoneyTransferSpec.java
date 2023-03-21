@@ -1,7 +1,7 @@
-package org.github.mjcro.mosaic.example.mosaic;
+package io.github.mjcro.mosaic.example.mosaic;
 
-import org.github.mjcro.mosaic.KeySpec;
-import org.github.mjcro.mosaic.example.domain.Amount;
+import io.github.mjcro.mosaic.KeySpec;
+import io.github.mjcro.mosaic.example.domain.Amount;
 
 import java.time.Instant;
 

@@ -1,4 +1,4 @@
-package org.github.mjcro.mosaic;
+package io.github.mjcro.mosaic;
 
 public interface EntityMapper<T, Key extends KeySpec> {
     Class<Key> getKeySpecClass();

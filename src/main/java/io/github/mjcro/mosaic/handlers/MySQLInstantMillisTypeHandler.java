@@ -1,21 +1,21 @@
-package org.github.mjcro.mosaic.handlers;
+package io.github.mjcro.mosaic.handlers;
 
-import org.github.mjcro.mosaic.exceptions.UnexpectedValueException;
+import io.github.mjcro.mosaic.exceptions.UnexpectedValueException;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 
-public class MySQLInstantSecondsTypeHandler extends MySQLAbstractTypeHandler {
-    public MySQLInstantSecondsTypeHandler() {
+public class MySQLInstantMillisTypeHandler extends MySQLAbstractTypeHandler {
+    public MySQLInstantMillisTypeHandler() {
         super("Instant", "`value`");
     }
 
     @Override
     protected void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException {
         if (value instanceof Instant) {
-            stmt.setLong(offset, ((Instant) value).getEpochSecond());
+            stmt.setLong(offset, ((Instant) value).toEpochMilli());
         } else {
             throw new UnexpectedValueException(value);
         }
@@ -23,6 +23,6 @@ public class MySQLInstantSecondsTypeHandler extends MySQLAbstractTypeHandler {
 
     @Override
     protected Object readObjectValue(ResultSet resultSet, int offset) throws SQLException {
-        return Instant.ofEpochSecond(resultSet.getLong(offset));
+        return Instant.ofEpochMilli(resultSet.getLong(offset));
     }
 }

@@ -1,4 +1,4 @@
-package org.github.mjcro.mosaic.example.domain;
+package io.github.mjcro.mosaic.example.domain;
 
 import java.math.BigDecimal;
 import java.util.Currency;

@@ -1,6 +1,6 @@
-package org.github.mjcro.mosaic.util;
+package io.github.mjcro.mosaic.util;
 
-import org.github.mjcro.mosaic.KeySpec;
+import io.github.mjcro.mosaic.KeySpec;
 
 import java.util.Collections;
 import java.util.EnumMap;

@@ -1,4 +1,4 @@
-package org.github.mjcro.mosaic;
+package io.github.mjcro.mosaic;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -12,14 +12,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DataProvider<Key extends Enum<Key> & KeySpec> {
-    private final ConnectionSupplier connectionSupplier;
+    private final ConnectionProvider connectionProvider;
     private final TypeHandlerResolver registeredTypes;
 
     public DataProvider(
-            final ConnectionSupplier connectionSupplier,
+            final ConnectionProvider connectionProvider,
             final TypeHandlerResolver typeHandlerResolver
     ) {
-        this.connectionSupplier = Objects.requireNonNull(connectionSupplier, "connectionSupplier");
+        this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionSupplier");
         this.registeredTypes = Objects.requireNonNull(typeHandlerResolver, "registeredTypes");
     }
 
@@ -30,7 +30,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
      */
     @SuppressWarnings("EmptyTryBlock")
     public void test() throws SQLException {
-        try (Connection connection = connectionSupplier.getConnection()) {
+        try (Connection connection = connectionProvider.getConnection()) {
         }
     }
 
@@ -79,9 +79,9 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionSupplier.getConnection()) {
+        try (Connection connection = connectionProvider.getConnection()) {
             for (Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
-                typeHandlers.get(entry.getKey()).update(
+                typeHandlers.get(entry.getKey()).store(
                         connection,
                         tablePrefix,
                         id,
@@ -103,7 +103,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         }
 
         HashMap<Long, Map<Key, List<Object>>> combined = new HashMap<>();
-        try (Connection connection = connectionSupplier.getConnection()) {
+        try (Connection connection = connectionProvider.getConnection()) {
             for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
                 Map<Long, Map<Key, List<Object>>> data = entry.getValue().findById(
                         connection,
@@ -136,7 +136,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionSupplier.getConnection()) {
+        try (Connection connection = connectionProvider.getConnection()) {
             for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
                 entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
             }

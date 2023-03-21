@@ -1,7 +1,7 @@
-package org.github.mjcro.mosaic.handlers;
+package io.github.mjcro.mosaic.handlers;
 
-import org.github.mjcro.mosaic.KeySpec;
-import org.github.mjcro.mosaic.util.EnumMapBuilder;
+import io.github.mjcro.mosaic.KeySpec;
+import io.github.mjcro.mosaic.util.EnumMapBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,13 +40,13 @@ class MySQLStringTypeHandlerTest {
                 .putSingle(Key.LAST_NAME, "Williams")
                 .build();
 
-        handler.create(connection, "common", 43, data);
+        handler.store(connection, "common", 43, data);
 
         data = EnumMapBuilder.ofClass(Key.class)
                 .putSingle(Key.LOGIN, "admin")
                 .putSingle(Key.FIRST_NAME, "Billie")
                 .build();
-        handler.create(connection, "common", 2, data);
+        handler.store(connection, "common", 2, data);
 
         Map<Long, Map<Key, List<Object>>> found = handler.findById(connection, "common", Collections.singletonList(21L), Collections.singleton(Key.LAST_NAME));
         Assertions.assertTrue(found.isEmpty());
@@ -65,7 +65,7 @@ class MySQLStringTypeHandlerTest {
                 .putSingle(Key.FIRST_NAME, "Robin")
                 .putSingle(Key.LAST_NAME, "Williams")
                 .build();
-        handler.create(connection, "common", 43, data);
+        handler.store(connection, "common", 43, data);
 
         handler.delete(connection, "common", 43, Collections.singletonList(Key.FIRST_NAME));
         Map<Long, Map<Key, List<Object>>> found = handler.findById(connection, "common", Collections.singletonList(43L), Collections.singleton(Key.FIRST_NAME));

@@ -1,8 +1,8 @@
-package org.github.mjcro.mosaic.example.mosaic;
+package io.github.mjcro.mosaic.example.mosaic;
 
-import org.github.mjcro.mosaic.AbstractMappedRepository;
-import org.github.mjcro.mosaic.DataProvider;
-import org.github.mjcro.mosaic.example.domain.MoneyTransfer;
+import io.github.mjcro.mosaic.AbstractMappedRepository;
+import io.github.mjcro.mosaic.DataProvider;
+import io.github.mjcro.mosaic.example.domain.MoneyTransfer;
 
 import java.sql.SQLException;
 import java.util.Optional;

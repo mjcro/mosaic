@@ -1,4 +1,4 @@
-package org.github.mjcro.mosaic.example.domain;
+package io.github.mjcro.mosaic.example.domain;
 
 import java.time.Instant;
 import java.util.Objects;

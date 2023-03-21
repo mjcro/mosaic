@@ -1,20 +1,20 @@
-package org.github.mjcro.mosaic.handlers;
+package io.github.mjcro.mosaic.handlers;
 
-import org.github.mjcro.mosaic.exceptions.UnexpectedValueException;
+import io.github.mjcro.mosaic.exceptions.UnexpectedValueException;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class MySQLStringTypeHandler extends MySQLAbstractTypeHandler {
-    public MySQLStringTypeHandler() {
-        super("String", "`value`");
+public class MySQLLongTypeHandler extends MySQLAbstractTypeHandler {
+    public MySQLLongTypeHandler() {
+        super("Long", "`value`");
     }
 
     @Override
     protected void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException {
-        if (value instanceof CharSequence) {
-            stmt.setString(offset, value.toString());
+        if (value instanceof Long) {
+            stmt.setLong(offset, (Long) value);
         } else {
             throw new UnexpectedValueException(value);
         }
@@ -22,6 +22,6 @@ public class MySQLStringTypeHandler extends MySQLAbstractTypeHandler {
 
     @Override
     protected Object readObjectValue(ResultSet resultSet, int offset) throws SQLException {
-        return resultSet.getString(offset);
+        return resultSet.getLong(offset);
     }
 }
