@@ -29,6 +29,17 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
         return "`" + tablePrefix + commonTableName + "`";
     }
 
+    /**
+     * True if connection has transactional context.
+     *
+     * @param connection Connection to analyze.
+     * @return True if transaction is active, false otherwise.
+     * @throws SQLException On database error.
+     */
+    protected boolean insideTransaction(Connection connection) throws SQLException {
+        return !connection.getAutoCommit();
+    }
+
     protected abstract void setPlaceholdersValue(PreparedStatement stmt, int offset, Object value) throws SQLException;
 
     protected abstract Object readObjectValue(ResultSet resultSet, int offset) throws SQLException;
@@ -114,6 +125,11 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
             sb.append("?");
         }
         sb.append(")");
+
+        if (insideTransaction(connection)) {
+            // Inside transaction
+            sb.append(" FOR UPDATE");
+        }
 
         Map<Long, Map<Key, List<Object>>> response = new HashMap<>();
         int offset = 1;
