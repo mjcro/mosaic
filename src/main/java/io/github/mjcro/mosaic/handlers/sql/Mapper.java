@@ -34,4 +34,22 @@ public interface Mapper {
      * @throws SQLException On error.
      */
     Object readObjectValue(ResultSet resultSet, int offset) throws SQLException;
+
+    /**
+     * Constructs new mapper with new common table name.
+     *
+     * @param commonName New common table name.
+     * @return Mapper.
+     */
+    default Mapper withCommonName(String commonName) {
+        if (commonName == null) {
+            throw new NullPointerException("commonName");
+        } else if (commonName.equals(getCommonName())) {
+            return this;
+        } else if (this instanceof CommonNameMapperDecorator) {
+            return ((CommonNameMapperDecorator) this).getDecorated().withCommonName(commonName);
+        } else {
+            return new CommonNameMapperDecorator(this, commonName);
+        }
+    }
 }
