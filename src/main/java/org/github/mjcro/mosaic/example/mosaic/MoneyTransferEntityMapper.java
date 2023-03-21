@@ -36,7 +36,7 @@ public class MoneyTransferEntityMapper implements EntityMapper<MoneyTransfer, Mo
 
     @Override
     public Entity<MoneyTransferSpec> toEntity(final MoneyTransfer data) {
-        EnumMapBuilder<MoneyTransferSpec> builder = new EnumMapBuilder<>(MoneyTransferSpec.class);
+        EnumMapBuilder<MoneyTransferSpec> builder = EnumMapBuilder.ofClass(MoneyTransferSpec.class);
         builder
                 .putSingle(MoneyTransferSpec.SENDER_ID, data.getSenderId())
                 .putSingle(MoneyTransferSpec.RECIPIENT_ID, data.getRecipientId())

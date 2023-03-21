@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -17,12 +18,17 @@ public class EnumMapBuilder<Key extends Enum<Key> & KeySpec> {
     private final EnumMap<Key, List<Object>> map;
 
     /**
-     * Constructs new enumeration map builder.
+     * Constructs enumeration map builder for given enum class.
      *
-     * @param clazz Enumeration class.
+     * @param clazz Enumeration class name.
+     * @return Builder.
      */
-    public EnumMapBuilder(final Class<Key> clazz) {
-        this.map = new EnumMap<>(clazz);
+    public static <X extends Enum<X> & KeySpec> EnumMapBuilder<X> ofClass(final Class<X> clazz) {
+        return new EnumMapBuilder<>(new EnumMap<>(Objects.requireNonNull(clazz, "clazz")));
+    }
+
+    private EnumMapBuilder(final EnumMap<Key, List<Object>> data) {
+        this.map = data;
     }
 
     /**

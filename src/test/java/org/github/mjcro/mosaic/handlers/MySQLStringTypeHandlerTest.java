@@ -1,6 +1,7 @@
 package org.github.mjcro.mosaic.handlers;
 
 import org.github.mjcro.mosaic.KeySpec;
+import org.github.mjcro.mosaic.util.EnumMapBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +13,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,14 +34,18 @@ class MySQLStringTypeHandlerTest {
 
     @Test
     public void testCreateAndRead() throws SQLException {
-        HashMap<KeySpec, List<Object>> data = new HashMap<>();
-        data.put(Key.FIRST_NAME, Collections.singletonList("Robin"));
-        data.put(Key.LAST_NAME, Collections.singletonList("Williams"));
+        Map<Key, List<Object>> data;
+        data = EnumMapBuilder.ofClass(Key.class)
+                .putSingle(Key.FIRST_NAME, "Robin")
+                .putSingle(Key.LAST_NAME, "Williams")
+                .build();
+
         handler.create(connection, "common", 43, data);
 
-        data = new HashMap<>();
-        data.put(Key.LOGIN, Collections.singletonList("admin"));
-        data.put(Key.FIRST_NAME, Collections.singletonList("Billie"));
+        data = EnumMapBuilder.ofClass(Key.class)
+                .putSingle(Key.LOGIN, "admin")
+                .putSingle(Key.FIRST_NAME, "Billie")
+                .build();
         handler.create(connection, "common", 2, data);
 
         Map<Long, Map<Key, List<Object>>> found = handler.findById(connection, "common", Collections.singletonList(21L), Collections.singleton(Key.LAST_NAME));
@@ -57,9 +61,10 @@ class MySQLStringTypeHandlerTest {
 
     @Test
     public void testDelete() throws SQLException {
-        HashMap<KeySpec, List<Object>> data = new HashMap<>();
-        data.put(Key.FIRST_NAME, Collections.singletonList("Robin"));
-        data.put(Key.LAST_NAME, Collections.singletonList("Williams"));
+        Map<Key, List<Object>> data = EnumMapBuilder.ofClass(Key.class)
+                .putSingle(Key.FIRST_NAME, "Robin")
+                .putSingle(Key.LAST_NAME, "Williams")
+                .build();
         handler.create(connection, "common", 43, data);
 
         handler.delete(connection, "common", 43, Collections.singletonList(Key.FIRST_NAME));

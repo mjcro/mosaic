@@ -7,11 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class MySQLAbstractTypeHandler implements TypeHandler {
     private final String commonTableName;
@@ -38,7 +34,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
             final Connection connection,
             final String tablePrefix,
             final long id,
-            final Map<KeySpec, List<Object>> values
+            final Map<? extends KeySpec, List<Object>> values
     ) throws SQLException {
         StringBuilder sb = new StringBuilder();
         sb.append("INSERT INTO ").append(getTableName(tablePrefix));
@@ -48,7 +44,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
         }
         sb.append(") VALUES ");
         boolean first = true;
-        for (Map.Entry<KeySpec, List<Object>> entry : values.entrySet()) {
+        for (Map.Entry<? extends KeySpec, List<Object>> entry : values.entrySet()) {
             for (int i = 0; i < entry.getValue().size(); i++) {
                 if (first) {
                     first = false;
@@ -65,7 +61,7 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
 
         int offset = 1;
         try (PreparedStatement stmt = connection.prepareStatement(sb.toString())) {
-            for (Map.Entry<KeySpec, List<Object>> entry : values.entrySet()) {
+            for (Map.Entry<? extends KeySpec, List<Object>> entry : values.entrySet()) {
                 for (final Object value : entry.getValue()) {
                     stmt.setLong(offset++, id);
                     stmt.setInt(offset++, entry.getKey().getTypeId());

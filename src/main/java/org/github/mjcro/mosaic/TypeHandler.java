@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface TypeHandler {
-    void create(Connection connection, String tablePrefix, long id, Map<KeySpec, List<Object>> values) throws SQLException;
+    void create(Connection connection, String tablePrefix, long id, Map<? extends KeySpec, List<Object>> values) throws SQLException;
 
     void update(Connection connection, String tablePrefix, long id, Map<KeySpec, List<Object>> values) throws SQLException;
 
