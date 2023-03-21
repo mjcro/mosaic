@@ -96,13 +96,30 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
             final Collection<Long> linkIds,
             final Collection<Key> keys
     ) throws SQLException {
+        return findByLinkId0(
+                (i, l, k, v) -> {
+                },
+                connection,
+                tablePrefix,
+                linkIds,
+                keys
+        );
+    }
+
+    protected <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findByLinkId0(
+            final ReadCallback<Key> readCallback,
+            final Connection connection,
+            final String tablePrefix,
+            final Collection<Long> linkIds,
+            final Collection<Key> keys
+    ) throws SQLException {
         HashMap<Integer, Key> reverseMap = new HashMap<>();
         for (final Key key : keys) {
             reverseMap.put(key.getTypeId(), key);
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT `linkId`,`typeId`");
+        sb.append("SELECT `id`,`linkId`,`typeId`");
         for (String column : valueColumns) {
             sb.append(",").append(column);
         }
@@ -148,9 +165,12 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
                             break;
                         }
 
-                        long linkId = rs.getLong(1);
-                        Key key = reverseMap.get(rs.getInt(2));
-                        Object value = readObjectValue(rs, 3);
+                        long incrementalId = rs.getLong(1);
+                        long linkId = rs.getLong(2);
+                        Key key = reverseMap.get(rs.getInt(3));
+                        Object value = readObjectValue(rs, 4);
+
+                        readCallback.onRead(incrementalId, linkId, key, value);
 
                         if (!response.containsKey(linkId)) {
                             response.put(linkId, new HashMap<>());
@@ -197,12 +217,8 @@ public abstract class MySQLAbstractTypeHandler implements TypeHandler {
         }
     }
 
-    public void update(
-            Connection connection,
-            String tablePrefix,
-            long id,
-            Map<KeySpec, List<Object>> values
-    ) throws SQLException {
-        // TODO
+    @FunctionalInterface
+    public interface ReadCallback<Key extends KeySpec> {
+        void onRead(long incrementalId, long linkId, Key key, Object value);
     }
 }
