@@ -9,19 +9,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class DataProvider<Key extends Enum<Key> & KeySpec> {
-    private final Supplier<Connection> connectionSupplier;
+    private final ConnectionSupplier connectionSupplier;
     private final TypeHandlerResolver registeredTypes;
 
     public DataProvider(
-            final Supplier<Connection> connectionSupplier,
+            final ConnectionSupplier connectionSupplier,
             final TypeHandlerResolver typeHandlerResolver
     ) {
         this.connectionSupplier = Objects.requireNonNull(connectionSupplier, "connectionSupplier");
         this.registeredTypes = Objects.requireNonNull(typeHandlerResolver, "registeredTypes");
+    }
+
+    /**
+     * Tests connection.
+     *
+     * @throws SQLException On connection error.
+     */
+    @SuppressWarnings("EmptyTryBlock")
+    public void test() throws SQLException {
+        try (Connection connection = connectionSupplier.getConnection()) {
+        }
     }
 
     private Map<Class<?>, Map<Key, List<Object>>> groupByClass(Map<Key, List<Object>> values) {
@@ -69,7 +79,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionSupplier.get()) {
+        try (Connection connection = connectionSupplier.getConnection()) {
             // Somehow creating ID
             long id = 0L; // TODO
 
@@ -97,7 +107,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionSupplier.get()) {
+        try (Connection connection = connectionSupplier.getConnection()) {
             for (Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
                 typeHandlers.get(entry.getKey()).update(
                         connection,
@@ -121,7 +131,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         }
 
         HashMap<Long, Map<Key, List<Object>>> combined = new HashMap<>();
-        try (Connection connection = connectionSupplier.get()) {
+        try (Connection connection = connectionSupplier.getConnection()) {
             for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
                 Map<Long, Map<Key, List<Object>>> data = entry.getValue().findById(
                         connection,
@@ -154,7 +164,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionSupplier.get()) {
+        try (Connection connection = connectionSupplier.getConnection()) {
             for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
                 entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
             }

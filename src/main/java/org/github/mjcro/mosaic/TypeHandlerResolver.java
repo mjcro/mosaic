@@ -1,5 +1,6 @@
 package org.github.mjcro.mosaic;
 
+@FunctionalInterface
 public interface TypeHandlerResolver {
     /**
      * Returns type handler to use for data read/write.
