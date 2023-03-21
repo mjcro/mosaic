@@ -89,6 +89,10 @@ public class MySqlMinimalLayout extends MySqlLayout {
 
                         long linkId = rs.getLong(1);
                         Key key = reverseMap.get(rs.getInt(2));
+                        if (key == null) {
+                            // Key not resolved
+                            continue;
+                        }
                         Object value = mapper.readObjectValue(rs, 3);
 
                         if (!response.containsKey(linkId)) {
