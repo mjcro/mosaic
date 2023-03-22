@@ -142,6 +142,9 @@ public class MySqlMinimalLayout extends MySqlLayout {
                 }
                 sb.append("(?,?,");
                 for (int j = 0; j < columns.length; j++) {
+                    if (j > 0) {
+                        sb.append(",");
+                    }
                     sb.append("?");
                 }
                 sb.append(")");
