@@ -25,10 +25,10 @@ public class DataProviderTest {
     @Test
     public void testAll() throws SQLException {
         // Creating schema
-        DriverManager.getConnection("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/dataProviderTest.sql'");
+        DriverManager.getConnection("jdbc:h2:mem:dataProviderTest;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/dataProviderTest.sql'");
         // Initializing data provider
         DataProvider<Key> provider = new DataProvider<>(
-                () -> DriverManager.getConnection("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1"),
+                () -> DriverManager.getConnection("jdbc:h2:mem:dataProviderTest;DB_CLOSE_DELAY=-1"),
                 new TypeHandlerResolverMap()
                         .with(String.class, MySqlMinimalLayout.INSTANCE, new StringMapper())
                         .with(Instant.class, MySqlMinimalLayout.INSTANCE, new InstantSecondsMapper())
@@ -36,7 +36,7 @@ public class DataProviderTest {
         );
 
         // Reading non-existing entity
-        Assert.assertTrue(provider.findById(Key.class, "dataProviderUnit", Collections.singleton(8L)).isEmpty());
+        Assert.assertTrue(provider.findById(Key.class, "dataProviderUnit", 8).isEmpty());
 
         // Creating entity
         Map<Key, List<Object>> entity1 = EnumMapBuilder.ofClass(Key.class)
@@ -48,11 +48,48 @@ public class DataProviderTest {
         provider.store("dataProviderUnit", 8, entity1);
 
         // Reading created entity
-        List<Entity<Key>> read = provider.findById(Key.class, "dataProviderUnit", Collections.singleton(8L));
-        Assert.assertEquals(read.size(), 1);
+        Map<Key, List<Object>> read = provider.findById(Key.class, "dataProviderUnit", 8);
+        Assert.assertFalse(read.isEmpty());
+        assertResultEquals(read, entity1);
+
+        // Performing partial delete
+        provider.delete("dataProviderUnit", 8, Collections.singleton(Key.LAST_NAME));
+        entity1.remove(Key.LAST_NAME);
+        read = provider.findById(Key.class, "dataProviderUnit", 8);
+        Assert.assertFalse(read.isEmpty());
+        assertResultEquals(read, entity1);
+
+        // Updating
+        Map<Key, List<Object>> update = EnumMapBuilder.ofClass(Key.class)
+                .putSingle(Key.LAST_NAME, "Nobody")
+                .putSingle(Key.UPDATED_AT, Instant.parse("2021-07-16T06:07:03Z"))
+                .build();
+        provider.store("dataProviderUnit", 8, update);
+        entity1.putAll(update);
+        read = provider.findById(Key.class, "dataProviderUnit", 8);
+        Assert.assertFalse(read.isEmpty());
+        assertResultEquals(read, entity1);
+
+        // Performing full delete
+        provider.delete(Key.class, "dataProviderUnit", 8);
+        read = provider.findById(Key.class, "dataProviderUnit", 8);
+        Assert.assertTrue(read.isEmpty());
     }
 
-    private void assertResultEquals() {
+    private void assertResultEquals(Map<Key, List<Object>> actual, Map<Key, List<Object>> expected) {
+        Assert.assertEquals(actual.size(), expected.size(), "Expected and actual maps has different size");
+        for (Key key : expected.keySet()) {
+            Assert.assertTrue(actual.containsKey(key), "Actual result map missing key " + key);
+            List<Object> actualObjects = actual.get(key);
+            List<Object> expectedObjects = expected.get(key);
+            Assert.assertEquals(actualObjects.size(), expectedObjects.size(), "Object size not equal for key " + key);
+            for (Object expectedObject : expectedObjects) {
+                Assert.assertTrue(
+                        actualObjects.contains(expectedObject),
+                        "For key " + key + " missing expected " + expectedObject
+                );
+            }
+        }
     }
 
     public enum Key implements KeySpec {
@@ -60,7 +97,8 @@ public class DataProviderTest {
         LAST_NAME(2, String.class),
 
         CREATED_AT(11, Instant.class),
-        EXPIRY_AT(11, Instant.class),
+        UPDATED_AT(12, Instant.class),
+        EXPIRY_AT(13, Instant.class),
 
         ACCOUNT_BALANCE(21, Amount.class);
 
@@ -103,6 +141,19 @@ public class DataProviderTest {
         @Override
         public String toString() {
             return getValue() + " " + getCurrency().getDisplayName();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Amount amount = (Amount) o;
+            return currency.equals(amount.currency) && value.compareTo(amount.value) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(currency, value);
         }
     }
 

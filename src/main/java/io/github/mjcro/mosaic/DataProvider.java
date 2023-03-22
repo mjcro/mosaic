@@ -4,12 +4,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class DataProvider<Key extends Enum<Key> & KeySpec> {
     private final ConnectionProvider connectionProvider;
@@ -91,7 +91,15 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         }
     }
 
-    public List<Entity<Key>> findById(Class<Key> keyClass, String tablePrefix, Set<Long> identifiers) throws SQLException {
+    public Map<Key, List<Object>> findById(Class<Key> keyClass, String tablePrefix, long id) throws SQLException {
+        Map<Long, Map<Key, List<Object>>> map = findById(keyClass, tablePrefix, Collections.singleton(id));
+        if (map.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return map.get(id);
+    }
+
+    public Map<Long, Map<Key, List<Object>>> findById(Class<Key> keyClass, String tablePrefix, Set<Long> identifiers) throws SQLException {
         // Grouping by class
         Map<Class<?>, List<Key>> groupedByClass = groupByClass(keyClass);
 
@@ -120,14 +128,30 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
             }
         }
 
-        return combined.entrySet().stream()
-                .map($entry -> new Entity<>($entry.getKey(), $entry.getValue()))
-                .collect(Collectors.toList());
+        return combined;
     }
 
-    public void partialDelete(String tablePrefix, long id, Set<Key> keys) throws SQLException {
+    public void delete(String tablePrefix, long id, Set<Key> keys) throws SQLException {
         // Grouping by class
         Map<Class<?>, List<Key>> groupedByClass = groupByClass(keys);
+
+        // Preparing type handlers and verifying that they are present
+        HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
+        for (Class<?> clazz : groupedByClass.keySet()) {
+            TypeHandler handler = registeredTypes.resolve(clazz);
+            typeHandlers.put(clazz, handler);
+        }
+
+        try (Connection connection = connectionProvider.getConnection()) {
+            for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
+                entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
+            }
+        }
+    }
+
+    public void delete(Class<Key> keyClass, String tablePrefix, long id) throws SQLException {
+        // Grouping by class
+        Map<Class<?>, List<Key>> groupedByClass = groupByClass(keyClass);
 
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
