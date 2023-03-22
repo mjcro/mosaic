@@ -1,4 +1,4 @@
-CREATE TABLE `dataProviderUnitString`
+CREATE TABLE `unitTestString`
 (
     `id`     int          not null auto_increment primary key,
     `linkId` bigint       not null,
@@ -6,7 +6,7 @@ CREATE TABLE `dataProviderUnitString`
     `value`  varchar(100) not null
 );
 
-CREATE TABLE `dataProviderUnitInstant`
+CREATE TABLE `unitTestInstant`
 (
     `id`     int          not null auto_increment primary key,
     `linkId` bigint       not null,
@@ -14,7 +14,7 @@ CREATE TABLE `dataProviderUnitInstant`
     `value`  bigint       not null
 );
 
-CREATE TABLE `dataProviderUnitAmount`
+CREATE TABLE `unitTestAmount`
 (
     `id`           int            not null auto_increment primary key,
     `linkId`       bigint         not null,

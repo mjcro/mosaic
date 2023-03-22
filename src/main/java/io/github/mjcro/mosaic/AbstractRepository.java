@@ -12,7 +12,7 @@ import java.util.Objects;
 /**
  * Base class containing helper methods.
  */
-abstract class AbstractMosaicProcessor<Key extends Enum<Key> & KeySpec> {
+abstract class AbstractRepository<Key extends Enum<Key> & KeySpec> {
     protected final Class<Key> clazz;
     protected final String tablePrefix;
     protected final ConnectionProvider connectionProvider;
@@ -26,7 +26,7 @@ abstract class AbstractMosaicProcessor<Key extends Enum<Key> & KeySpec> {
      * @param clazz               Key class to work with.
      * @param tablePrefix         Database table prefix.
      */
-    protected AbstractMosaicProcessor(
+    protected AbstractRepository(
             final ConnectionProvider connectionProvider,
             final TypeHandlerResolver typeHandlerResolver,
             final Class<Key> clazz,

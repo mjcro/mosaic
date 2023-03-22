@@ -10,8 +10,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MosaicProcessor<Key extends Enum<Key> & KeySpec> extends AbstractMosaicProcessor<Key> {
-    public MosaicProcessor(
+/**
+ * Handles data read and write using configured type handler resolvers.
+ */
+public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractRepository<Key> {
+    /**
+     * Constructs new repository instance.
+     *
+     * @param connectionProvider  Database connection provider.
+     * @param typeHandlerResolver Type handler resolver.
+     * @param clazz               Key class this repository instance should work with.
+     * @param tablePrefix         Database table prefix.
+     */
+    public Repository(
             final ConnectionProvider connectionProvider,
             final TypeHandlerResolver typeHandlerResolver,
             final Class<Key> clazz,

@@ -22,20 +22,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class MosaicProcessorTest {
+public class RepositoryTest {
     @Test
     public void testAll() throws SQLException {
         // Creating schema
-        DriverManager.getConnection("jdbc:h2:mem:mosaicProcessorTest;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/mosaicProcessorTest.sql'");
+        DriverManager.getConnection("jdbc:h2:mem:mosaic;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/repositoryTest.sql'");
         // Initializing data provider
-        MosaicProcessor<Key> provider = new MosaicProcessor<>(
-                () -> DriverManager.getConnection("jdbc:h2:mem:mosaicProcessorTest;DB_CLOSE_DELAY=-1"),
+        Repository<Key> provider = new Repository<>(
+                () -> DriverManager.getConnection("jdbc:h2:mem:mosaic;DB_CLOSE_DELAY=-1"),
                 new TypeHandlerResolverMap()
                         .with(String.class, MySqlMinimalLayout.INSTANCE, new StringMapper())
                         .with(Instant.class, MySqlMinimalLayout.INSTANCE, new InstantSecondsMapper())
                         .with(Amount.class, MySqlPersistentWithCreationTimeSeconds.INSTANCE, new CustomAmountMapper()),
                 Key.class,
-                "dataProviderUnit"
+                "unitTest"
         );
 
         // Reading non-existing entity
