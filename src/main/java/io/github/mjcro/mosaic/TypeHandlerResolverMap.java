@@ -1,6 +1,6 @@
 package io.github.mjcro.mosaic;
 
-import io.github.mjcro.mosaic.exceptions.UnableToResolveTypeHandlerException;
+import io.github.mjcro.mosaic.exceptions.NoSuitableTypeHandlerFoundException;
 import io.github.mjcro.mosaic.handlers.sql.Layout;
 import io.github.mjcro.mosaic.handlers.sql.LayoutAwareTypeHandler;
 import io.github.mjcro.mosaic.handlers.sql.Mapper;
@@ -43,13 +43,13 @@ public class TypeHandlerResolverMap implements TypeHandlerResolver {
     }
 
     @Override
-    public TypeHandler resolve(final Class<?> clazz) throws UnableToResolveTypeHandlerException {
+    public TypeHandler resolve(final Class<?> clazz) throws NoSuitableTypeHandlerFoundException {
         if (clazz != null) {
             TypeHandler typeHandler = map.get(clazz);
             if (typeHandler != null) {
                 return typeHandler;
             }
         }
-        throw new UnableToResolveTypeHandlerException(clazz);
+        throw new NoSuitableTypeHandlerFoundException(clazz);
     }
 }

@@ -1,7 +1,10 @@
 package io.github.mjcro.mosaic.exceptions;
 
-public class UnableToResolveTypeHandlerException extends MosaicException {
-    public UnableToResolveTypeHandlerException(final Class<?> clazz) {
+/**
+ * Exception thrown when no suitable type handler foung.
+ */
+public class NoSuitableTypeHandlerFoundException extends MosaicException {
+    public NoSuitableTypeHandlerFoundException(final Class<?> clazz) {
         super(
                 clazz == null
                         ? "Unable to resolve type handler for null"

@@ -2,79 +2,31 @@ package io.github.mjcro.mosaic;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
-public class DataProvider<Key extends Enum<Key> & KeySpec> {
-    private final Class<Key> clazz;
-    private final String tablePrefix;
-    private final ConnectionProvider connectionProvider;
-    private final TypeHandlerResolver registeredTypes;
-
-    public DataProvider(
+public class MosaicProcessor<Key extends Enum<Key> & KeySpec> extends AbstractMosaicProcessor<Key> {
+    public MosaicProcessor(
             final ConnectionProvider connectionProvider,
             final TypeHandlerResolver typeHandlerResolver,
             final Class<Key> clazz,
             final String tablePrefix
     ) {
-        this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionSupplier");
-        this.registeredTypes = Objects.requireNonNull(typeHandlerResolver, "registeredTypes");
-        this.clazz = Objects.requireNonNull(clazz, "clazz");
-        this.tablePrefix = Objects.requireNonNull(tablePrefix, "tablePrefix");
+        super(connectionProvider, typeHandlerResolver, clazz, tablePrefix);
     }
 
     /**
-     * Tests connection.
+     * Stores given data into database.
      *
-     * @throws SQLException On connection error.
+     * @param id     Identifier of entity data belongs to.
+     * @param values Data values.
+     * @throws SQLException On database error.
      */
-    @SuppressWarnings("EmptyTryBlock")
-    public void test() throws SQLException {
-        try (Connection connection = connectionProvider.getConnection()) {
-        }
-    }
-
-    private Map<Class<?>, Map<Key, List<Object>>> groupByClass(Map<Key, List<Object>> values) {
-        HashMap<Class<?>, Map<Key, List<Object>>> grouped = new HashMap<>();
-        for (final Map.Entry<Key, List<Object>> entry : values.entrySet()) {
-            Class<?> clazz = entry.getKey().getDataClass();
-            if (!grouped.containsKey(clazz)) {
-                grouped.put(clazz, new HashMap<>());
-            }
-            grouped.get(clazz).put(entry.getKey(), entry.getValue());
-        }
-        return grouped;
-    }
-
-    private Map<Class<?>, List<Key>> groupByClass(Class<Key> clazz) {
-        HashMap<Class<?>, List<Key>> grouped = new HashMap<>();
-        for (Key key : clazz.getEnumConstants()) {
-            if (!grouped.containsKey(key.getDataClass())) {
-                grouped.put(key.getDataClass(), new ArrayList<>());
-            }
-            grouped.get(key.getDataClass()).add(key);
-        }
-        return grouped;
-    }
-
-    private Map<Class<?>, List<Key>> groupByClass(Collection<Key> keys) {
-        HashMap<Class<?>, List<Key>> grouped = new HashMap<>();
-        for (Key key : keys) {
-            if (!grouped.containsKey(key.getDataClass())) {
-                grouped.put(key.getDataClass(), new ArrayList<>());
-            }
-            grouped.get(key.getDataClass()).add(key);
-        }
-        return grouped;
-    }
-
     public void store(long id, Map<Key, List<Object>> values) throws SQLException {
         // Grouping by class
         Map<Class<?>, Map<Key, List<Object>>> groupedByClass = groupByClass(values);
@@ -98,14 +50,28 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         }
     }
 
+    /**
+     * Fetches data for given single entity identifier.
+     *
+     * @param id Entity identifier.
+     * @return Found data. Will return empty map if no data present.
+     * @throws SQLException On database error.
+     */
     public Map<Key, List<Object>> findById(long id) throws SQLException {
         Map<Long, Map<Key, List<Object>>> map = findById(Collections.singleton(id));
-        if (map.isEmpty()) {
+        if (map == null || map.isEmpty()) {
             return Collections.emptyMap();
         }
         return map.get(id);
     }
 
+    /**
+     * Fetches data for given identifiers.
+     *
+     * @param identifiers Entity identifiers to fetch data for.
+     * @return Found data.
+     * @throws SQLException On database error.
+     */
     public Map<Long, Map<Key, List<Object>>> findById(Collection<Long> identifiers) throws SQLException {
         // Deduplication
         identifiers = identifiers instanceof Set<?>
@@ -113,7 +79,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
                 : new HashSet<>(identifiers);
 
         // Grouping by class
-        Map<Class<?>, List<Key>> groupedByClass = groupByClass(clazz);
+        Map<Class<?>, List<Key>> groupedByClass = groupByClass();
 
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
@@ -143,6 +109,13 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         return combined;
     }
 
+    /**
+     * Deletes (partially) data from database.
+     *
+     * @param id   Entity identifier.
+     * @param keys Keys to delete.
+     * @throws SQLException On database error.
+     */
     public void delete(long id, Collection<Key> keys) throws SQLException {
         // Deduplication
         keys = keys instanceof Set<?>
@@ -166,9 +139,15 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         }
     }
 
+    /**
+     * Deletes all data for given entity identifier.
+     *
+     * @param id Entity identifier.
+     * @throws SQLException On database error.
+     */
     public void delete(long id) throws SQLException {
         // Grouping by class
-        Map<Class<?>, List<Key>> groupedByClass = groupByClass(clazz);
+        Map<Class<?>, List<Key>> groupedByClass = groupByClass();
 
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();

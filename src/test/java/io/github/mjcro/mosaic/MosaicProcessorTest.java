@@ -22,14 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class DataProviderTest {
+public class MosaicProcessorTest {
     @Test
     public void testAll() throws SQLException {
         // Creating schema
-        DriverManager.getConnection("jdbc:h2:mem:dataProviderTest;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/dataProviderTest.sql'");
+        DriverManager.getConnection("jdbc:h2:mem:mosaicProcessorTest;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/mosaicProcessorTest.sql'");
         // Initializing data provider
-        DataProvider<Key> provider = new DataProvider<>(
-                () -> DriverManager.getConnection("jdbc:h2:mem:dataProviderTest;DB_CLOSE_DELAY=-1"),
+        MosaicProcessor<Key> provider = new MosaicProcessor<>(
+                () -> DriverManager.getConnection("jdbc:h2:mem:mosaicProcessorTest;DB_CLOSE_DELAY=-1"),
                 new TypeHandlerResolverMap()
                         .with(String.class, MySqlMinimalLayout.INSTANCE, new StringMapper())
                         .with(Instant.class, MySqlMinimalLayout.INSTANCE, new InstantSecondsMapper())

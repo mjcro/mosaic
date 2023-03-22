@@ -1,6 +1,6 @@
 package io.github.mjcro.mosaic;
 
-import io.github.mjcro.mosaic.exceptions.UnableToResolveTypeHandlerException;
+import io.github.mjcro.mosaic.exceptions.NoSuitableTypeHandlerFoundException;
 
 @FunctionalInterface
 public interface TypeHandlerResolver {
@@ -9,7 +9,7 @@ public interface TypeHandlerResolver {
      *
      * @param clazz Class to resolve.
      * @return Associated type handler.
-     * @throws UnableToResolveTypeHandlerException If no type handler for particular type configured.
+     * @throws NoSuitableTypeHandlerFoundException If no type handler for particular type configured.
      */
-    TypeHandler resolve(Class<?> clazz) throws UnableToResolveTypeHandlerException;
+    TypeHandler resolve(Class<?> clazz) throws NoSuitableTypeHandlerFoundException;
 }
