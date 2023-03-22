@@ -33,11 +33,13 @@ public class DataProviderTest {
                 new TypeHandlerResolverMap()
                         .with(String.class, MySqlMinimalLayout.INSTANCE, new StringMapper())
                         .with(Instant.class, MySqlMinimalLayout.INSTANCE, new InstantSecondsMapper())
-                        .with(Amount.class, MySqlPersistentWithCreationTimeSeconds.INSTANCE, new CustomAmountMapper())
+                        .with(Amount.class, MySqlPersistentWithCreationTimeSeconds.INSTANCE, new CustomAmountMapper()),
+                Key.class,
+                "dataProviderUnit"
         );
 
         // Reading non-existing entity
-        Assert.assertTrue(provider.findById(Key.class, "dataProviderUnit", 8).isEmpty());
+        Assert.assertTrue(provider.findById(8).isEmpty());
 
         // Creating entity
         Map<Key, List<Object>> entity1 = EnumMapBuilder.ofClass(Key.class)
@@ -46,17 +48,17 @@ public class DataProviderTest {
                 .putSingle(Key.CREATED_AT, Instant.parse("2021-07-14T06:07:08Z"))
                 .putSingle(Key.ACCOUNT_BALANCE, new Amount(Currency.getInstance("USD"), BigDecimal.TEN))
                 .build();
-        provider.store("dataProviderUnit", 8, entity1);
+        provider.store(8, entity1);
 
         // Reading created entity
-        Map<Key, List<Object>> read = provider.findById(Key.class, "dataProviderUnit", 8);
+        Map<Key, List<Object>> read = provider.findById(8);
         Assert.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
 
         // Performing partial delete
-        provider.delete("dataProviderUnit", 8, Collections.singleton(Key.LAST_NAME));
+        provider.delete(8, Collections.singleton(Key.LAST_NAME));
         entity1.remove(Key.LAST_NAME);
-        read = provider.findById(Key.class, "dataProviderUnit", 8);
+        read = provider.findById(8);
         Assert.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
 
@@ -64,17 +66,18 @@ public class DataProviderTest {
         Map<Key, List<Object>> update = EnumMapBuilder.ofClass(Key.class)
                 .putSingle(Key.LAST_NAME, "Nobody")
                 .putSingle(Key.UPDATED_AT, Instant.parse("2021-07-16T06:07:03Z"))
+                .putSingle(Key.EXPIRY_AT, Instant.parse("2025-01-01T00:00:00Z"))
                 .putSingle(Key.ACCOUNT_BALANCE, new Amount(Currency.getInstance("USD"), BigDecimal.ONE))
                 .build();
-        provider.store("dataProviderUnit", 8, update);
+        provider.store(8, update);
         entity1.putAll(update);
-        read = provider.findById(Key.class, "dataProviderUnit", 8);
+        read = provider.findById(8);
         Assert.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
 
         // Performing full delete
-        provider.delete(Key.class, "dataProviderUnit", 8);
-        read = provider.findById(Key.class, "dataProviderUnit", 8);
+        provider.delete(8);
+        read = provider.findById(8);
         Assert.assertTrue(read.isEmpty());
     }
 

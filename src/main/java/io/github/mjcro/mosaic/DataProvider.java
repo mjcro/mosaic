@@ -6,21 +6,28 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 public class DataProvider<Key extends Enum<Key> & KeySpec> {
+    private final Class<Key> clazz;
+    private final String tablePrefix;
     private final ConnectionProvider connectionProvider;
     private final TypeHandlerResolver registeredTypes;
 
     public DataProvider(
             final ConnectionProvider connectionProvider,
-            final TypeHandlerResolver typeHandlerResolver
+            final TypeHandlerResolver typeHandlerResolver,
+            final Class<Key> clazz,
+            final String tablePrefix
     ) {
         this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionSupplier");
         this.registeredTypes = Objects.requireNonNull(typeHandlerResolver, "registeredTypes");
+        this.clazz = Objects.requireNonNull(clazz, "clazz");
+        this.tablePrefix = Objects.requireNonNull(tablePrefix, "tablePrefix");
     }
 
     /**
@@ -68,7 +75,7 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         return grouped;
     }
 
-    public void store(String tablePrefix, long id, Map<Key, List<Object>> values) throws SQLException {
+    public void store(long id, Map<Key, List<Object>> values) throws SQLException {
         // Grouping by class
         Map<Class<?>, Map<Key, List<Object>>> groupedByClass = groupByClass(values);
 
@@ -91,17 +98,22 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         }
     }
 
-    public Map<Key, List<Object>> findById(Class<Key> keyClass, String tablePrefix, long id) throws SQLException {
-        Map<Long, Map<Key, List<Object>>> map = findById(keyClass, tablePrefix, Collections.singleton(id));
+    public Map<Key, List<Object>> findById(long id) throws SQLException {
+        Map<Long, Map<Key, List<Object>>> map = findById(Collections.singleton(id));
         if (map.isEmpty()) {
             return Collections.emptyMap();
         }
         return map.get(id);
     }
 
-    public Map<Long, Map<Key, List<Object>>> findById(Class<Key> keyClass, String tablePrefix, Set<Long> identifiers) throws SQLException {
+    public Map<Long, Map<Key, List<Object>>> findById(Collection<Long> identifiers) throws SQLException {
+        // Deduplication
+        identifiers = identifiers instanceof Set<?>
+                ? identifiers
+                : new HashSet<>(identifiers);
+
         // Grouping by class
-        Map<Class<?>, List<Key>> groupedByClass = groupByClass(keyClass);
+        Map<Class<?>, List<Key>> groupedByClass = groupByClass(clazz);
 
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
@@ -131,7 +143,12 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         return combined;
     }
 
-    public void delete(String tablePrefix, long id, Set<Key> keys) throws SQLException {
+    public void delete(long id, Collection<Key> keys) throws SQLException {
+        // Deduplication
+        keys = keys instanceof Set<?>
+                ? keys
+                : new HashSet<>(keys);
+
         // Grouping by class
         Map<Class<?>, List<Key>> groupedByClass = groupByClass(keys);
 
@@ -149,9 +166,9 @@ public class DataProvider<Key extends Enum<Key> & KeySpec> {
         }
     }
 
-    public void delete(Class<Key> keyClass, String tablePrefix, long id) throws SQLException {
+    public void delete(long id) throws SQLException {
         // Grouping by class
-        Map<Class<?>, List<Key>> groupedByClass = groupByClass(keyClass);
+        Map<Class<?>, List<Key>> groupedByClass = groupByClass(clazz);
 
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
