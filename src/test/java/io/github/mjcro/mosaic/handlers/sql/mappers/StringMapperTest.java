@@ -5,10 +5,10 @@ import io.github.mjcro.mosaic.TypeHandler;
 import io.github.mjcro.mosaic.handlers.sql.LayoutAwareTypeHandler;
 import io.github.mjcro.mosaic.handlers.sql.mysql.MySqlMinimalLayout;
 import io.github.mjcro.mosaic.util.EnumMapBuilder;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -17,17 +17,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-class StringMapperTest {
+public class StringMapperTest {
     private Connection connection;
     private TypeHandler handler;
 
-    @BeforeEach
+    @BeforeMethod
     public void setup() throws SQLException {
         connection = DriverManager.getConnection("jdbc:h2:mem:test;INIT=RUNSCRIPT FROM 'src/test/resources/string.sql'");
         handler = new LayoutAwareTypeHandler(MySqlMinimalLayout.INSTANCE, new StringMapper());
     }
 
-    @AfterEach
+    @AfterMethod
     public void tearDown() throws SQLException {
         connection.close();
     }
@@ -49,12 +49,12 @@ class StringMapperTest {
         handler.store(connection, "common", 2, data);
 
         Map<Key, List<Object>> found = handler.findByLinkId(connection, "common", 21, Collections.singleton(Key.LAST_NAME));
-        Assertions.assertTrue(found.isEmpty());
+        Assert.assertTrue(found.isEmpty());
 
         found = handler.findByLinkId(connection, "common", 43, Collections.singleton(Key.LAST_NAME));
-        Assertions.assertFalse(found.isEmpty());
-        Assertions.assertEquals(1, found.size());
-        Assertions.assertEquals("Williams", found.get(Key.LAST_NAME).get(0));
+        Assert.assertFalse(found.isEmpty());
+        Assert.assertEquals(found.size(), 1);
+        Assert.assertEquals(found.get(Key.LAST_NAME).get(0), "Williams");
     }
 
     @Test
@@ -67,8 +67,7 @@ class StringMapperTest {
 
         handler.delete(connection, "common", 43, Collections.singletonList(Key.FIRST_NAME));
         Map<Key, List<Object>> found = handler.findByLinkId(connection, "common", 43, Collections.singleton(Key.FIRST_NAME));
-        Assertions.assertTrue(found.isEmpty());
-
+        Assert.assertTrue(found.isEmpty());
     }
 
     public enum Key implements KeySpec {
