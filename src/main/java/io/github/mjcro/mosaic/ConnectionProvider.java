@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 @FunctionalInterface
 public interface ConnectionProvider {
     /**
-     * Wraps given Java supplier into ConnectionSupplier wrapper.
+     * Wraps given Java supplier into ConnectionProvider wrapper.
      *
      * @param supplier Java supplier.
      * @return ConnectionProvider instance.
@@ -16,6 +16,17 @@ public interface ConnectionProvider {
     static ConnectionProvider ofSupplier(final Supplier<Connection> supplier) {
         Objects.requireNonNull(supplier, "supplier");
         return supplier::get;
+    }
+
+    /**
+     * Wraps existing connection into ConnectionProvider wrapper.
+     *
+     * @param connection Established connection
+     * @return ConnectionProvider instance.
+     */
+    static ConnectionProvider ofConnection(final Connection connection) {
+        Objects.requireNonNull(connection, "connection");
+        return () -> connection;
     }
 
     /**
