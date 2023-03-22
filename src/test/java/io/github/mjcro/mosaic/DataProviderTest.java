@@ -5,6 +5,7 @@ import io.github.mjcro.mosaic.handlers.sql.Mapper;
 import io.github.mjcro.mosaic.handlers.sql.mappers.InstantSecondsMapper;
 import io.github.mjcro.mosaic.handlers.sql.mappers.StringMapper;
 import io.github.mjcro.mosaic.handlers.sql.mysql.MySqlMinimalLayout;
+import io.github.mjcro.mosaic.handlers.sql.mysql.MySqlPersistentWithCreationTimeSeconds;
 import io.github.mjcro.mosaic.util.EnumMapBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -32,7 +33,7 @@ public class DataProviderTest {
                 new TypeHandlerResolverMap()
                         .with(String.class, MySqlMinimalLayout.INSTANCE, new StringMapper())
                         .with(Instant.class, MySqlMinimalLayout.INSTANCE, new InstantSecondsMapper())
-                        .with(Amount.class, MySqlMinimalLayout.INSTANCE, new CustomAmountMapper())
+                        .with(Amount.class, MySqlPersistentWithCreationTimeSeconds.INSTANCE, new CustomAmountMapper())
         );
 
         // Reading non-existing entity
@@ -63,6 +64,7 @@ public class DataProviderTest {
         Map<Key, List<Object>> update = EnumMapBuilder.ofClass(Key.class)
                 .putSingle(Key.LAST_NAME, "Nobody")
                 .putSingle(Key.UPDATED_AT, Instant.parse("2021-07-16T06:07:03Z"))
+                .putSingle(Key.ACCOUNT_BALANCE, new Amount(Currency.getInstance("USD"), BigDecimal.ONE))
                 .build();
         provider.store("dataProviderUnit", 8, update);
         entity1.putAll(update);

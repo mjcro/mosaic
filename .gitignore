@@ -5,4 +5,5 @@ Foo.java
 *.iml
 /*.txt
 /*.log
+/*.sql
 /pom.xml.versionsBackup
