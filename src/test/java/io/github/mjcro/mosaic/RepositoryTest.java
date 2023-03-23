@@ -31,8 +31,8 @@ public class RepositoryTest {
         Repository<Key> provider = new Repository<>(
                 () -> DriverManager.getConnection("jdbc:h2:mem:mosaic;DB_CLOSE_DELAY=-1"),
                 new TypeHandlerResolverMap()
-                        .with(String.class, MySqlMinimalLayout.INSTANCE, new StringMapper())
-                        .with(Instant.class, MySqlMinimalLayout.INSTANCE, new InstantSecondsMapper())
+                        .with(String.class, MySqlMinimalLayout.DEFAULT, new StringMapper())
+                        .with(Instant.class, MySqlMinimalLayout.DEFAULT, new InstantSecondsMapper())
                         .with(Amount.class, MySqlPersistentWithCreationTimeSeconds.INSTANCE, new CustomAmountMapper()),
                 Key.class,
                 "unitTest"

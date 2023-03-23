@@ -4,6 +4,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * Defines behavior single data type should be read from {@link ResultSet}
+ * and be written using {@link PreparedStatement} placeholders.
+ */
 public interface Mapper {
     /**
      * @return Table common name.

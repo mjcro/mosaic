@@ -13,9 +13,55 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+/**
+ * Persistent (no data deletion) layout to store data.
+ * <p>
+ * Contains following columns:
+ * - id - incremental, int64
+ * - linkId - identifier of anchor link
+ * - typeId - identifier of type
+ * - active - 1 if record is active, 0 is considered deleted
+ * - time - Unix timestamp in seconds this record was added to database.
+ * - ... - value column(s), names are provided by mapper
+ * <p>
+ * Whenever data is requested to be deleted, it will be actually deleted from
+ * database.
+ */
 public class MySqlPersistentWithCreationTimeSeconds extends MySqlLayout {
-    public static final MySqlPersistentWithCreationTimeSeconds INSTANCE = new MySqlPersistentWithCreationTimeSeconds();
+    public static final MySqlPersistentWithCreationTimeSeconds INSTANCE = new MySqlPersistentWithCreationTimeSeconds(
+            true,
+            "linkId",
+            "typeId",
+            "active",
+            "time"
+    );
+
+    protected final String columnIsActive;
+    protected final String columnCreationTime;
+
+    /**
+     * Constructs persistent MySQL layout with given column names.
+     *
+     * @param detectTransaction  If true, layout will detect transactional context and insert "FOR UPDATE"
+     *                           while reading data.
+     * @param columnLinkId       Column name to store link identifier.
+     * @param columnTypeId       Column name to store type identifier.
+     * @param columnIsActive     Column name to store boolean 0/1 activity flag.
+     * @param columnCreationTime Column name to store creation timestamp in seconds.
+     */
+    public MySqlPersistentWithCreationTimeSeconds(
+            boolean detectTransaction,
+            String columnLinkId,
+            String columnTypeId,
+            String columnIsActive,
+            String columnCreationTime
+    ) {
+        super(detectTransaction, columnLinkId, columnTypeId);
+        this.columnIsActive = Objects.requireNonNull(columnIsActive, "columnIsActive");
+        this.columnCreationTime = Objects.requireNonNull(columnCreationTime, "columnCreationTime");
+    }
 
     @Override
     public <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findByLinkId(
@@ -33,13 +79,14 @@ public class MySqlPersistentWithCreationTimeSeconds extends MySqlLayout {
         String[] columns = mapper.getColumnNames();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT `linkId`,`typeId`");
+        sb.append("SELECT ").append(escapeName(columnLinkId)).append(",").append(escapeName(columnTypeId));
         for (String column : columns) {
-            sb.append(",").append(column);
+            sb.append(",").append(escapeName(column));
         }
-        sb.append(" FROM ").append(tableName).append(" WHERE `active`=1 AND");
 
-        sb.append(" `linkId` IN (");
+        sb.append(" FROM ").append(escapeName(tableName)).append(" WHERE ");
+        sb.append(escapeName(columnIsActive)).append("=1 AND");
+        sb.append(" ").append(escapeName(columnLinkId)).append(" IN (");
         for (int i = 0; i < linkIds.size(); i++) {
             if (i > 0) {
                 sb.append(",");
@@ -48,7 +95,7 @@ public class MySqlPersistentWithCreationTimeSeconds extends MySqlLayout {
         }
         sb.append(")");
 
-        sb.append(" AND `typeId` IN (");
+        sb.append(" AND ").append(escapeName(columnTypeId)).append(" IN (");
         for (int i = 0; i < keys.size(); i++) {
             if (i > 0) {
                 sb.append(",");
@@ -121,10 +168,11 @@ public class MySqlPersistentWithCreationTimeSeconds extends MySqlLayout {
         String[] columns = mapper.getColumnNames();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO ").append(tableName);
-        sb.append(" (`linkId`,`typeId`,`active`,`time`");
+        sb.append("INSERT INTO ").append(escapeName(tableName));
+        sb.append(" (").append(escapeName(columnLinkId)).append(",").append(escapeName(columnTypeId));
+        sb.append(",").append(escapeName(columnIsActive)).append(",").append(columnCreationTime);
         for (String column : columns) {
-            sb.append(",").append(column);
+            sb.append(",").append(escapeName(column));
         }
         sb.append(") VALUES ");
         boolean first = true;
@@ -171,7 +219,9 @@ public class MySqlPersistentWithCreationTimeSeconds extends MySqlLayout {
             Collection<? extends KeySpec> keys
     ) throws SQLException {
         StringBuilder sb = new StringBuilder();
-        sb.append("UPDATE ").append(tableName).append(" SET `active`=0 WHERE `linkId`=? AND `typeId` IN (");
+        sb.append("UPDATE ").append(tableName).append(" SET ").append(escapeName(columnIsActive)).append("=0");
+        sb.append(" WHERE ").append(escapeName(columnLinkId)).append(" = ? AND ");
+        sb.append(escapeName(columnTypeId)).append(" IN (");
         for (int i = 0; i < keys.size(); i++) {
             if (i > 0) {
                 sb.append(",");

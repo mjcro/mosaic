@@ -18,12 +18,31 @@ import java.util.Map;
  * <p>
  * Contains following columns:
  * - id - incremental, int64
- * - linkId - identifier or anchor link
+ * - linkId - identifier of anchor link
  * - typeId - identifier of type
  * - ... - value column(s), names are provided by mapper
+ * <p>
+ * Whenever data is requested to be deleted, it will be actually deleted from
+ * database.
  */
 public class MySqlMinimalLayout extends MySqlLayout {
-    public static final MySqlMinimalLayout INSTANCE = new MySqlMinimalLayout();
+    public static final MySqlMinimalLayout DEFAULT = new MySqlMinimalLayout(
+            true,
+            "linkId",
+            "typeId"
+    );
+
+    /**
+     * Constructs minimal MySQL layout with given column names.
+     *
+     * @param detectTransaction If true, layout will detect transactional context and insert "FOR UPDATE"
+     *                          while reading data.
+     * @param columnLinkId      Column name to store link identifier.
+     * @param columnTypeId      Column name to store type identifier.
+     */
+    public MySqlMinimalLayout(boolean detectTransaction, String columnLinkId, String columnTypeId) {
+        super(detectTransaction, columnLinkId, columnTypeId);
+    }
 
     @Override
     public <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findByLinkId(
@@ -41,13 +60,13 @@ public class MySqlMinimalLayout extends MySqlLayout {
         String[] columns = mapper.getColumnNames();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT `linkId`,`typeId`");
+        sb.append("SELECT ").append(escapeName(columnLinkId)).append(",").append(escapeName(columnTypeId));
         for (String column : columns) {
-            sb.append(",").append(column);
+            sb.append(",").append(escapeName(column));
         }
-        sb.append(" FROM ").append(tableName).append(" WHERE");
 
-        sb.append(" `linkId` IN (");
+        sb.append(" FROM ").append(escapeName(tableName)).append(" WHERE");
+        sb.append(" ").append(escapeName(columnLinkId)).append(" IN (");
         for (int i = 0; i < linkIds.size(); i++) {
             if (i > 0) {
                 sb.append(",");
@@ -56,7 +75,7 @@ public class MySqlMinimalLayout extends MySqlLayout {
         }
         sb.append(")");
 
-        sb.append(" AND `typeId` IN (");
+        sb.append(" AND ").append(escapeName(columnTypeId)).append(" IN (");
         for (int i = 0; i < keys.size(); i++) {
             if (i > 0) {
                 sb.append(",");
@@ -126,10 +145,10 @@ public class MySqlMinimalLayout extends MySqlLayout {
         String[] columns = mapper.getColumnNames();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO ").append(tableName);
-        sb.append(" (`linkId`,`typeId`");
+        sb.append("INSERT INTO ").append(escapeName(tableName));
+        sb.append(" (").append(escapeName(columnLinkId)).append(",").append(escapeName(columnTypeId));
         for (String column : columns) {
-            sb.append(",").append(column);
+            sb.append(",").append(escapeName(column));
         }
         sb.append(") VALUES ");
         boolean first = true;
@@ -174,7 +193,9 @@ public class MySqlMinimalLayout extends MySqlLayout {
             Collection<? extends KeySpec> keys
     ) throws SQLException {
         StringBuilder sb = new StringBuilder();
-        sb.append("DELETE FROM ").append(tableName).append(" WHERE `linkId`=? AND `typeId` IN (");
+        sb.append("DELETE FROM ").append(escapeName(tableName));
+        sb.append(" WHERE ").append(escapeName(columnLinkId)).append(" = ? AND ");
+        sb.append(escapeName(columnTypeId)).append(" IN (");
         for (int i = 0; i < keys.size(); i++) {
             if (i > 0) {
                 sb.append(",");
