@@ -30,7 +30,7 @@ import java.util.Objects;
  * database.
  */
 public class MySqlPersistentWithCreationTimeSeconds extends MySqlLayout {
-    public static final MySqlPersistentWithCreationTimeSeconds INSTANCE = new MySqlPersistentWithCreationTimeSeconds(
+    public static final MySqlPersistentWithCreationTimeSeconds DEFAULT = new MySqlPersistentWithCreationTimeSeconds(
             true,
             "linkId",
             "typeId",

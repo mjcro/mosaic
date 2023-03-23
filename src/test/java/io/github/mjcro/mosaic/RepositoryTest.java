@@ -2,7 +2,9 @@ package io.github.mjcro.mosaic;
 
 import io.github.mjcro.mosaic.exceptions.UnexpectedValueException;
 import io.github.mjcro.mosaic.handlers.sql.Mapper;
+import io.github.mjcro.mosaic.handlers.sql.mappers.BigDecimalMapper;
 import io.github.mjcro.mosaic.handlers.sql.mappers.InstantSecondsMapper;
+import io.github.mjcro.mosaic.handlers.sql.mappers.LongMapper;
 import io.github.mjcro.mosaic.handlers.sql.mappers.StringMapper;
 import io.github.mjcro.mosaic.handlers.sql.mysql.MySqlMinimalLayout;
 import io.github.mjcro.mosaic.handlers.sql.mysql.MySqlPersistentWithCreationTimeSeconds;
@@ -32,8 +34,10 @@ public class RepositoryTest {
                 () -> DriverManager.getConnection("jdbc:h2:mem:mosaic;DB_CLOSE_DELAY=-1"),
                 new TypeHandlerResolverMap()
                         .with(String.class, MySqlMinimalLayout.DEFAULT, new StringMapper())
+                        .with(Long.class, MySqlMinimalLayout.DEFAULT, new LongMapper())
                         .with(Instant.class, MySqlMinimalLayout.DEFAULT, new InstantSecondsMapper())
-                        .with(Amount.class, MySqlPersistentWithCreationTimeSeconds.INSTANCE, new CustomAmountMapper()),
+                        .with(BigDecimal.class, MySqlMinimalLayout.DEFAULT, new BigDecimalMapper().withCommonName("Discount"))
+                        .with(Amount.class, MySqlPersistentWithCreationTimeSeconds.DEFAULT, new CustomAmountMapper()),
                 Key.class,
                 "unitTest"
         );
@@ -45,7 +49,9 @@ public class RepositoryTest {
         Map<Key, List<Object>> entity1 = EnumMapBuilder.ofClass(Key.class)
                 .putSingle(Key.FIRST_NAME, "John")
                 .putSingle(Key.LAST_NAME, "Smith")
+                .putSingle(Key.PRICING_PLAN, 1237154245178L)
                 .putSingle(Key.CREATED_AT, Instant.parse("2021-07-14T06:07:08Z"))
+                .putSingle(Key.DISCOUNT_PERCENT, BigDecimal.valueOf(0.5))
                 .putSingle(Key.ACCOUNT_BALANCE, new Amount(Currency.getInstance("USD"), BigDecimal.TEN))
                 .build();
         provider.store(8, entity1);
@@ -101,11 +107,15 @@ public class RepositoryTest {
         FIRST_NAME(1, String.class),
         LAST_NAME(2, String.class),
 
+        PRICING_PLAN(5, Long.class),
+
         CREATED_AT(11, Instant.class),
         UPDATED_AT(12, Instant.class),
         EXPIRY_AT(13, Instant.class),
 
-        ACCOUNT_BALANCE(21, Amount.class);
+        DISCOUNT_PERCENT(21, BigDecimal.class),
+
+        ACCOUNT_BALANCE(31, Amount.class);
 
         private final int typeId;
         private final Class<?> dataClass;
