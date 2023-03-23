@@ -5,6 +5,7 @@ import io.github.mjcro.mosaic.handlers.sql.Layout;
 import io.github.mjcro.mosaic.handlers.sql.LayoutAwareTypeHandler;
 import io.github.mjcro.mosaic.handlers.sql.Mapper;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -13,7 +14,7 @@ import java.util.Objects;
  * Not thread safe (works as builder) and should be configured before actual usage.
  */
 public class TypeHandlerResolverMap implements TypeHandlerResolver {
-    private final HashMap<Class<?>, TypeHandler> map = new HashMap<>();
+    private final HashMap<Type, TypeHandler> map = new HashMap<>();
 
     /**
      * Modifies current resolver adding new type handler.
@@ -43,13 +44,13 @@ public class TypeHandlerResolverMap implements TypeHandlerResolver {
     }
 
     @Override
-    public TypeHandler resolve(final Class<?> clazz) throws NoSuitableTypeHandlerFoundException {
-        if (clazz != null) {
-            TypeHandler typeHandler = map.get(clazz);
+    public TypeHandler resolve(Type type) throws NoSuitableTypeHandlerFoundException {
+        if (type != null) {
+            TypeHandler typeHandler = map.get(type);
             if (typeHandler != null) {
                 return typeHandler;
             }
         }
-        throw new NoSuitableTypeHandlerFoundException(clazz);
+        throw new NoSuitableTypeHandlerFoundException(type);
     }
 }

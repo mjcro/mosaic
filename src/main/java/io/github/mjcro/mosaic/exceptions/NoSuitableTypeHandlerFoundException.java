@@ -1,14 +1,16 @@
 package io.github.mjcro.mosaic.exceptions;
 
+import java.lang.reflect.Type;
+
 /**
  * Exception thrown when no suitable type handler foung.
  */
 public class NoSuitableTypeHandlerFoundException extends MosaicException {
-    public NoSuitableTypeHandlerFoundException(final Class<?> clazz) {
+    public NoSuitableTypeHandlerFoundException(final Type type) {
         super(
-                clazz == null
+                type == null
                         ? "Unable to resolve type handler for null"
-                        : "Unable to resolve type handler for " + clazz.getName()
+                        : "Unable to resolve type handler for " + type.getTypeName()
         );
     }
 }
