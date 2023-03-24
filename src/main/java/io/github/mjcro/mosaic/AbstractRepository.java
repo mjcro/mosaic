@@ -1,7 +1,5 @@
 package io.github.mjcro.mosaic;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,38 +13,23 @@ import java.util.Objects;
 abstract class AbstractRepository<Key extends Enum<Key> & KeySpec> {
     protected final Class<Key> clazz;
     protected final String tablePrefix;
-    protected final ConnectionProvider connectionProvider;
     protected final TypeHandlerResolver registeredTypes;
 
     /**
      * Constructs data provider.
      *
-     * @param connectionProvider  Connection provider.
      * @param typeHandlerResolver Type handler resolver.
      * @param clazz               Key class to work with.
      * @param tablePrefix         Database table prefix.
      */
     protected AbstractRepository(
-            final ConnectionProvider connectionProvider,
             final TypeHandlerResolver typeHandlerResolver,
             final Class<Key> clazz,
             final String tablePrefix
     ) {
-        this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionSupplier");
         this.registeredTypes = Objects.requireNonNull(typeHandlerResolver, "registeredTypes");
         this.clazz = Objects.requireNonNull(clazz, "clazz");
         this.tablePrefix = Objects.requireNonNull(tablePrefix, "tablePrefix");
-    }
-
-    /**
-     * Tests connection.
-     *
-     * @throws SQLException On connection error.
-     */
-    @SuppressWarnings("EmptyTryBlock")
-    public void test() throws SQLException {
-        try (Connection connection = connectionProvider.getConnection()) {
-        }
     }
 
     /**

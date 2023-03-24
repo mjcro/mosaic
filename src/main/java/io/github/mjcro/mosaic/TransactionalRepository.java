@@ -9,42 +9,39 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * Handles data read and write using configured type handler resolvers.
+ * Requires established connection for each method invocation and works
+ * within transaction isolation context.
  */
-public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractRepository<Key> {
-    private final ConnectionProvider connectionProvider;
-
+public class TransactionalRepository<Key extends Enum<Key> & KeySpec> extends AbstractRepository<Key> {
     /**
-     * Constructs new repository instance.
+     * Constructs data provider.
      *
-     * @param connectionProvider  Database connection provider.
      * @param typeHandlerResolver Type handler resolver.
-     * @param clazz               Key class this repository instance should work with.
+     * @param clazz               Key class to work with.
      * @param tablePrefix         Database table prefix.
      */
-    public Repository(
-            final ConnectionProvider connectionProvider,
+    protected TransactionalRepository(
             final TypeHandlerResolver typeHandlerResolver,
             final Class<Key> clazz,
             final String tablePrefix
     ) {
         super(typeHandlerResolver, clazz, tablePrefix);
-        this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionProvider");
     }
 
     /**
      * Stores given data into database.
      *
-     * @param id     Identifier of entity data belongs to.
-     * @param values Data values.
+     * @param connection Database connection to use.
+     * @param id         Identifier of entity data belongs to.
+     * @param values     Data values.
      * @throws SQLException On database error.
      */
-    public void store(long id, Map<Key, List<Object>> values) throws SQLException {
+    public void store(Connection connection, long id, Map<Key, List<Object>> values) throws SQLException {
         // Grouping by class
         Map<Class<?>, Map<Key, List<Object>>> groupedByClass = groupByClass(values);
 
@@ -55,27 +52,26 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionProvider.getConnection()) {
-            for (Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
-                typeHandlers.get(entry.getKey()).store(
-                        connection,
-                        tablePrefix,
-                        id,
-                        new HashMap<>(entry.getValue())
-                );
-            }
+        for (Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
+            typeHandlers.get(entry.getKey()).store(
+                    connection,
+                    tablePrefix,
+                    id,
+                    new HashMap<>(entry.getValue())
+            );
         }
     }
 
     /**
      * Fetches data for given single entity identifier.
      *
-     * @param id Entity identifier.
+     * @param connection Database connection to use.
+     * @param id         Entity identifier.
      * @return Found data. Will return empty map if no data present.
      * @throws SQLException On database error.
      */
-    public Map<Key, List<Object>> findById(long id) throws SQLException {
-        Map<Long, Map<Key, List<Object>>> map = findById(Collections.singleton(id));
+    public Map<Key, List<Object>> findById(Connection connection, long id) throws SQLException {
+        Map<Long, Map<Key, List<Object>>> map = findById(connection, Collections.singleton(id));
         if (map == null || map.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -85,11 +81,15 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
     /**
      * Fetches data for given identifiers.
      *
+     * @param connection  Database connection to use.
      * @param identifiers Entity identifiers to fetch data for.
      * @return Found data.
      * @throws SQLException On database error.
      */
-    public Map<Long, Map<Key, List<Object>>> findById(Collection<Long> identifiers) throws SQLException {
+    public Map<Long, Map<Key, List<Object>>> findById(
+            Connection connection,
+            Collection<Long> identifiers
+    ) throws SQLException {
         // Deduplication
         identifiers = identifiers instanceof Set<?>
                 ? identifiers
@@ -106,20 +106,18 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
         }
 
         HashMap<Long, Map<Key, List<Object>>> combined = new HashMap<>();
-        try (Connection connection = connectionProvider.getConnection()) {
-            for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
-                Map<Long, Map<Key, List<Object>>> data = entry.getValue().findByLinkId(
-                        connection,
-                        tablePrefix,
-                        identifiers,
-                        groupedByClass.get(entry.getKey())
-                );
-                for (Map.Entry<Long, Map<Key, List<Object>>> datum : data.entrySet()) {
-                    if (!combined.containsKey(datum.getKey())) {
-                        combined.put(datum.getKey(), new HashMap<>());
-                    }
-                    combined.get(datum.getKey()).putAll(datum.getValue());
+        for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
+            Map<Long, Map<Key, List<Object>>> data = entry.getValue().findByLinkId(
+                    connection,
+                    tablePrefix,
+                    identifiers,
+                    groupedByClass.get(entry.getKey())
+            );
+            for (Map.Entry<Long, Map<Key, List<Object>>> datum : data.entrySet()) {
+                if (!combined.containsKey(datum.getKey())) {
+                    combined.put(datum.getKey(), new HashMap<>());
                 }
+                combined.get(datum.getKey()).putAll(datum.getValue());
             }
         }
 
@@ -129,11 +127,12 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
     /**
      * Deletes (partially) data from database.
      *
-     * @param id   Entity identifier.
-     * @param keys Keys to delete.
+     * @param connection Database connection to use.
+     * @param id         Entity identifier.
+     * @param keys       Keys to delete.
      * @throws SQLException On database error.
      */
-    public void delete(long id, Collection<Key> keys) throws SQLException {
+    public void delete(Connection connection, long id, Collection<Key> keys) throws SQLException {
         // Deduplication
         keys = keys instanceof Set<?>
                 ? keys
@@ -149,20 +148,19 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionProvider.getConnection()) {
-            for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
-                entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
-            }
+        for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
+            entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
         }
     }
 
     /**
      * Deletes all data for given entity identifier.
      *
-     * @param id Entity identifier.
+     * @param connection Database connection to use.
+     * @param id         Entity identifier.
      * @throws SQLException On database error.
      */
-    public void delete(long id) throws SQLException {
-        delete(id, Arrays.stream(clazz.getEnumConstants()).collect(Collectors.toList()));
+    public void delete(Connection connection, long id) throws SQLException {
+        delete(connection, id, Arrays.stream(clazz.getEnumConstants()).collect(Collectors.toList()));
     }
 }

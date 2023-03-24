@@ -2,6 +2,7 @@ package io.github.mjcro.mosaic;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,23 +12,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
  * Handles data read and write using configured type handler resolvers.
  */
-public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractRepository<Key> {
+public class ParallelRepository<Key extends Enum<Key> & KeySpec> extends AbstractRepository<Key> {
     private final ConnectionProvider connectionProvider;
+    private final ExecutorService executorService;
 
     /**
      * Constructs new repository instance.
      *
+     * @param executorService     Executor service to use to parallel queries.
      * @param connectionProvider  Database connection provider.
      * @param typeHandlerResolver Type handler resolver.
      * @param clazz               Key class this repository instance should work with.
      * @param tablePrefix         Database table prefix.
      */
-    public Repository(
+    public ParallelRepository(
+            final ExecutorService executorService,
             final ConnectionProvider connectionProvider,
             final TypeHandlerResolver typeHandlerResolver,
             final Class<Key> clazz,
@@ -35,6 +43,7 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
     ) {
         super(typeHandlerResolver, clazz, tablePrefix);
         this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionProvider");
+        this.executorService = Objects.requireNonNull(executorService, "executorService");
     }
 
     /**
@@ -55,16 +64,25 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionProvider.getConnection()) {
-            for (Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
-                typeHandlers.get(entry.getKey()).store(
-                        connection,
-                        tablePrefix,
-                        id,
-                        new HashMap<>(entry.getValue())
-                );
-            }
+        ArrayList<Future<?>> futures = new ArrayList<>();
+        for (final Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
+            Future<?> future = executorService.submit(() -> {
+                try (Connection connection = connectionProvider.getConnection()) {
+                    typeHandlers.get(entry.getKey()).store(
+                            connection,
+                            tablePrefix,
+                            id,
+                            new HashMap<>(entry.getValue())
+                    );
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            futures.add(future);
         }
+
+        // Waiting for futures to complete
+        waitAll(futures);
     }
 
     /**
@@ -91,7 +109,7 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
      */
     public Map<Long, Map<Key, List<Object>>> findById(Collection<Long> identifiers) throws SQLException {
         // Deduplication
-        identifiers = identifiers instanceof Set<?>
+        Collection<Long> identifierSet = identifiers instanceof Set<?>
                 ? identifiers
                 : new HashSet<>(identifiers);
 
@@ -105,23 +123,32 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
             typeHandlers.put(clazz, handler);
         }
 
-        HashMap<Long, Map<Key, List<Object>>> combined = new HashMap<>();
-        try (Connection connection = connectionProvider.getConnection()) {
-            for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
-                Map<Long, Map<Key, List<Object>>> data = entry.getValue().findByLinkId(
-                        connection,
-                        tablePrefix,
-                        identifiers,
-                        groupedByClass.get(entry.getKey())
-                );
-                for (Map.Entry<Long, Map<Key, List<Object>>> datum : data.entrySet()) {
-                    if (!combined.containsKey(datum.getKey())) {
-                        combined.put(datum.getKey(), new HashMap<>());
+        ConcurrentHashMap<Long, Map<Key, List<Object>>> combined = new ConcurrentHashMap<>();
+        ArrayList<Future<?>> futures = new ArrayList<>();
+        for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
+            Future<?> future = executorService.submit(() -> {
+                try (Connection connection = connectionProvider.getConnection()) {
+                    Map<Long, Map<Key, List<Object>>> data = entry.getValue().findByLinkId(
+                            connection,
+                            tablePrefix,
+                            identifierSet,
+                            groupedByClass.get(entry.getKey())
+                    );
+                    for (Map.Entry<Long, Map<Key, List<Object>>> datum : data.entrySet()) {
+                        if (!combined.containsKey(datum.getKey())) {
+                            combined.put(datum.getKey(), new HashMap<>());
+                        }
+                        combined.get(datum.getKey()).putAll(datum.getValue());
                     }
-                    combined.get(datum.getKey()).putAll(datum.getValue());
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
                 }
-            }
+            });
+            futures.add(future);
         }
+
+        // Waiting for futures to complete
+        waitAll(futures);
 
         return combined;
     }
@@ -149,11 +176,20 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionProvider.getConnection()) {
-            for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
-                entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
-            }
+        ArrayList<Future<?>> futures = new ArrayList<>();
+        for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
+            Future<?> future = executorService.submit(() -> {
+                try (Connection connection = connectionProvider.getConnection()) {
+                    entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            futures.add(future);
         }
+
+        // Waiting for futures to complete
+        waitAll(futures);
     }
 
     /**
@@ -164,5 +200,26 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
      */
     public void delete(long id) throws SQLException {
         delete(id, Arrays.stream(clazz.getEnumConstants()).collect(Collectors.toList()));
+    }
+
+    /**
+     * Waits for all futures to complete.
+     *
+     * @param futures Futures to wait.
+     */
+    private void waitAll(List<Future<?>> futures) {
+        try {
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            // Freeing other futures (that may not be started yet)
+            for (Future<?> future : futures) {
+                if (!future.isDone() && !future.isCancelled()) {
+                    future.cancel(false);
+                }
+            }
+            throw new RuntimeException(e);
+        }
     }
 }
