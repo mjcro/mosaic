@@ -1,7 +1,7 @@
 Mosaic
 ------
 
-(Draft) Micro framework aiming to provide help storing sparse data into multiple database tables (vertical tables).
+(Draft) Micro framework aiming to provide help to store sparse data into multiple database tables (vertical tables).
 
 ## Distribution
 

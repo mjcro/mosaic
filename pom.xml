@@ -96,6 +96,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.github.mjcro</groupId>
+            <artifactId>interfaces</artifactId>
+            <version>1.0.3</version>
+        </dependency>
+        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>7.5</version>
