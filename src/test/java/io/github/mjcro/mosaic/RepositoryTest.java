@@ -30,7 +30,7 @@ public class RepositoryTest {
         // Creating schema
         DriverManager.getConnection("jdbc:h2:mem:mosaic;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/repositoryTest.sql'");
         // Initializing data provider
-        Repository<Key> provider = new Repository<>(
+        Repository<Key> repository = new Repository<>(
                 () -> DriverManager.getConnection("jdbc:h2:mem:mosaic;DB_CLOSE_DELAY=-1"),
                 new TypeHandlerResolverMap()
                         .with(String.class, MySqlMinimalLayout.DEFAULT, new StringMapper())
@@ -43,7 +43,7 @@ public class RepositoryTest {
         );
 
         // Reading non-existing entity
-        Assert.assertTrue(provider.findById(8).isEmpty());
+        Assert.assertTrue(repository.findById(8).isEmpty());
 
         // Creating entity
         Map<Key, List<Object>> entity1 = EnumMapBuilder.ofClass(Key.class)
@@ -54,17 +54,17 @@ public class RepositoryTest {
                 .putSingle(Key.DISCOUNT_PERCENT, BigDecimal.valueOf(0.5))
                 .putSingle(Key.ACCOUNT_BALANCE, new Amount(Currency.getInstance("USD"), BigDecimal.TEN))
                 .build();
-        provider.store(8, entity1);
+        repository.store(8, entity1);
 
         // Reading created entity
-        Map<Key, List<Object>> read = provider.findById(8);
+        Map<Key, List<Object>> read = repository.findById(8);
         Assert.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
 
         // Performing partial delete
-        provider.delete(8, Collections.singleton(Key.LAST_NAME));
+        repository.delete(8, Collections.singleton(Key.LAST_NAME));
         entity1.remove(Key.LAST_NAME);
-        read = provider.findById(8);
+        read = repository.findById(8);
         Assert.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
 
@@ -75,15 +75,15 @@ public class RepositoryTest {
                 .putSingle(Key.EXPIRY_AT, Instant.parse("2025-01-01T00:00:00Z"))
                 .putSingle(Key.ACCOUNT_BALANCE, new Amount(Currency.getInstance("USD"), BigDecimal.ONE))
                 .build();
-        provider.store(8, update);
+        repository.store(8, update);
         entity1.putAll(update);
-        read = provider.findById(8);
+        read = repository.findById(8);
         Assert.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
 
         // Performing full delete
-        provider.delete(8);
-        read = provider.findById(8);
+        repository.delete(8);
+        read = repository.findById(8);
         Assert.assertTrue(read.isEmpty());
     }
 
