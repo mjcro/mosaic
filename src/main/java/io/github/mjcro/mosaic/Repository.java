@@ -4,23 +4,18 @@ import io.github.mjcro.interfaces.sql.ConnectionProvider;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Handles data read and write using configured type handler resolvers.
  */
-public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractRepository<Key> {
-    private final ConnectionProvider connectionProvider;
-
+public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractConnectionProviderRepository<Key> {
     /**
      * Constructs new repository instance.
      *
@@ -35,17 +30,10 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
             final Class<Key> clazz,
             final String tablePrefix
     ) {
-        super(typeHandlerResolver, clazz, tablePrefix);
-        this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionProvider");
+        super(connectionProvider, typeHandlerResolver, clazz, tablePrefix);
     }
 
-    /**
-     * Stores given data into database.
-     *
-     * @param id     Identifier of entity data belongs to.
-     * @param values Data values.
-     * @throws SQLException On database error.
-     */
+    @Override
     public void store(long id, Map<Key, List<Object>> values) throws SQLException {
         // Grouping by class
         Map<Class<?>, Map<Key, List<Object>>> groupedByClass = groupByClass(values);
@@ -69,36 +57,19 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
         }
     }
 
-    /**
-     * Fetches data for given single entity identifier.
-     *
-     * @param id Entity identifier.
-     * @return Found data. Will return empty map if no data present.
-     * @throws SQLException On database error.
-     */
-    public Map<Key, List<Object>> findById(long id) throws SQLException {
-        Map<Long, Map<Key, List<Object>>> map = findById(Collections.singleton(id));
-        if (map == null || map.isEmpty()) {
+    @Override
+    protected Map<Long, Map<Key, List<Object>>> find(
+            Collection<Long> identifiers,
+            Map<Class<?>, List<Key>> groupedByClass
+    ) throws SQLException {
+        if (identifiers == null || identifiers.isEmpty()) {
             return Collections.emptyMap();
         }
-        return map.get(id);
-    }
 
-    /**
-     * Fetches data for given identifiers.
-     *
-     * @param identifiers Entity identifiers to fetch data for.
-     * @return Found data.
-     * @throws SQLException On database error.
-     */
-    public Map<Long, Map<Key, List<Object>>> findById(Collection<Long> identifiers) throws SQLException {
         // Deduplication
         identifiers = identifiers instanceof Set<?>
                 ? identifiers
                 : new HashSet<>(identifiers);
-
-        // Grouping by class
-        Map<Class<?>, List<Key>> groupedByClass = groupByClass();
 
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
@@ -128,13 +99,7 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
         return combined;
     }
 
-    /**
-     * Deletes (partially) data from database.
-     *
-     * @param id   Entity identifier.
-     * @param keys Keys to delete.
-     * @throws SQLException On database error.
-     */
+    @Override
     public void delete(long id, Collection<Key> keys) throws SQLException {
         // Deduplication
         keys = keys instanceof Set<?>
@@ -156,15 +121,5 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractReposit
                 entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
             }
         }
-    }
-
-    /**
-     * Deletes all data for given entity identifier.
-     *
-     * @param id Entity identifier.
-     * @throws SQLException On database error.
-     */
-    public void delete(long id) throws SQLException {
-        delete(id, Arrays.stream(clazz.getEnumConstants()).collect(Collectors.toList()));
     }
 }

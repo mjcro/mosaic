@@ -18,20 +18,24 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-public class RepositoryTest {
+public class RepositoriesTest {
     @Test
-    public void testAll() throws SQLException {
+    public void testRepository() throws SQLException {
         // Creating schema
-        DriverManager.getConnection("jdbc:h2:mem:mosaic;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/repositoryTest.sql'");
+        DriverManager.getConnection("jdbc:h2:mem:mosaic1;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/repositoryTest.sql'");
         // Initializing data provider
         Repository<Key> repository = new Repository<>(
-                () -> DriverManager.getConnection("jdbc:h2:mem:mosaic;DB_CLOSE_DELAY=-1"),
+                () -> DriverManager.getConnection("jdbc:h2:mem:mosaic1;DB_CLOSE_DELAY=-1"),
                 new TypeHandlerResolverMap()
                         .with(String.class, MySqlMinimalLayout.DEFAULT, new StringMapper())
                         .with(Long.class, MySqlMinimalLayout.DEFAULT, new LongMapper())
@@ -42,6 +46,37 @@ public class RepositoryTest {
                 "unitTest"
         );
 
+        doTest(repository);
+    }
+
+    @Test
+    public void testParallelRepository() throws SQLException, InterruptedException {
+        // Initializing executor
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        // Creating schema
+        DriverManager.getConnection("jdbc:h2:mem:mosaic2;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/repositoryTest.sql'");
+        // Initializing data provider
+        ParallelRepository<Key> repository = new ParallelRepository<>(
+                executorService,
+                () -> DriverManager.getConnection("jdbc:h2:mem:mosaic2;DB_CLOSE_DELAY=-1"),
+                new TypeHandlerResolverMap()
+                        .with(String.class, MySqlMinimalLayout.DEFAULT, new StringMapper())
+                        .with(Long.class, MySqlMinimalLayout.DEFAULT, new LongMapper())
+                        .with(Instant.class, MySqlMinimalLayout.DEFAULT, new InstantSecondsMapper())
+                        .with(BigDecimal.class, MySqlMinimalLayout.DEFAULT, new BigDecimalMapper().withCommonName("Discount"))
+                        .with(Amount.class, MySqlPersistentWithCreationTimeSeconds.DEFAULT, new CustomAmountMapper()),
+                Key.class,
+                "unitTest"
+        );
+
+        doTest(repository);
+
+        executorService.shutdown();
+        executorService.awaitTermination(1, TimeUnit.SECONDS);
+    }
+
+    private void doTest(AbstractConnectionProviderRepository<Key> repository) throws SQLException {
         // Reading non-existing entity
         Assert.assertTrue(repository.findById(8).isEmpty());
 
@@ -60,6 +95,25 @@ public class RepositoryTest {
         Map<Key, List<Object>> read = repository.findById(8);
         Assert.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
+
+        // Partial read single key
+        read = repository.findById(8, Collections.singleton(Key.LAST_NAME));
+        Assert.assertFalse(read.isEmpty());
+        Assert.assertEquals(read.size(), 1);
+        Assert.assertTrue(read.containsKey(Key.LAST_NAME));
+        Assert.assertFalse(read.get(Key.LAST_NAME).isEmpty());
+        Assert.assertEquals(read.get(Key.LAST_NAME).get(0), "Smith");
+
+        // Partial read several keys
+        read = repository.findById(8, Arrays.asList(Key.LAST_NAME, Key.DISCOUNT_PERCENT));
+        Assert.assertFalse(read.isEmpty());
+        Assert.assertEquals(read.size(), 2);
+        Assert.assertTrue(read.containsKey(Key.LAST_NAME));
+        Assert.assertFalse(read.get(Key.LAST_NAME).isEmpty());
+        Assert.assertEquals(read.get(Key.LAST_NAME).get(0), "Smith");
+        Assert.assertTrue(read.containsKey(Key.DISCOUNT_PERCENT));
+        Assert.assertFalse(read.get(Key.DISCOUNT_PERCENT).isEmpty());
+        Assert.assertEquals(read.get(Key.DISCOUNT_PERCENT).get(0), BigDecimal.valueOf(0.5));
 
         // Performing partial delete
         repository.delete(8, Collections.singleton(Key.LAST_NAME));
