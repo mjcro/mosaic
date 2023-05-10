@@ -6,7 +6,7 @@
 
     <groupId>io.github.mjcro</groupId>
     <artifactId>mosaic</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <name>MicroJ Mosaic</name>
     <description>Vertical tables micro framework</description>
@@ -98,7 +98,7 @@
         <dependency>
             <groupId>io.github.mjcro</groupId>
             <artifactId>interfaces</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.6</version>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>

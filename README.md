@@ -5,7 +5,13 @@ Mosaic
 
 ## Distribution
 
-No release yet
+```xml
+<dependency>
+    <groupId>io.github.mjcro</groupId>
+    <artifactId>mosaic</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
 
 ## Motivation
 
