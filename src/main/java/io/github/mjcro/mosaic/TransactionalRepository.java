@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,7 @@ public class TransactionalRepository<Key extends Enum<Key> & KeySpec> extends Ab
      * @param clazz               Key class to work with.
      * @param tablePrefix         Database table prefix.
      */
-    protected TransactionalRepository(
+    public TransactionalRepository(
             final TypeHandlerResolver typeHandlerResolver,
             final Class<Key> clazz,
             final String tablePrefix
@@ -42,6 +43,11 @@ public class TransactionalRepository<Key extends Enum<Key> & KeySpec> extends Ab
      * @throws SQLException On database error.
      */
     public void store(Connection connection, long id, Map<Key, List<Object>> values) throws SQLException {
+        Objects.requireNonNull(connection, "connection");
+        if (values == null || values.isEmpty()) {
+            return;
+        }
+
         // Grouping by class
         Map<Class<?>, Map<Key, List<Object>>> groupedByClass = groupByClass(values);
 
@@ -90,13 +96,63 @@ public class TransactionalRepository<Key extends Enum<Key> & KeySpec> extends Ab
             Connection connection,
             Collection<Long> identifiers
     ) throws SQLException {
+        return find(connection, identifiers, groupByClass());
+    }
+
+
+    /**
+     * Fetches partial data for given single entity identifier.
+     *
+     * @param connection Database connection.
+     * @param id         Entity identifier.
+     * @param keys       Keys to read.
+     * @return Found data. Will return empty map if no data present.
+     * @throws SQLException On database error.
+     */
+    public Map<Key, List<Object>> findById(Connection connection, long id, Collection<Key> keys) throws SQLException {
+        Map<Long, Map<Key, List<Object>>> map = findById(connection, Collections.singleton(id), keys);
+        if (map == null || map.isEmpty() || !map.containsKey(id)) {
+            return Collections.emptyMap();
+        }
+        return map.get(id);
+    }
+
+    /**
+     * Fetches partial data for given identifiers.
+     *
+     * @param connection  Database connection.
+     * @param identifiers Entity identifiers to fetch data for.
+     * @param keys        Keys to read.
+     * @return Found data.
+     * @throws SQLException On database error.
+     */
+    public Map<Long, Map<Key, List<Object>>> findById(Connection connection, Collection<Long> identifiers, Collection<Key> keys) throws SQLException {
+        return find(connection, identifiers, groupByClass(keys));
+    }
+
+
+    /**
+     * Utility method that actually reads data from database.
+     *
+     * @param connection     Database connection.
+     * @param identifiers    Identifiers to read.
+     * @param groupedByClass Type handlers grouped by class.
+     * @return Found data.
+     * @throws SQLException On database error.
+     */
+    private Map<Long, Map<Key, List<Object>>> find(
+            Connection connection,
+            Collection<Long> identifiers,
+            Map<Class<?>, List<Key>> groupedByClass
+    ) throws SQLException {
         // Deduplication
         identifiers = identifiers instanceof Set<?>
                 ? identifiers
                 : new HashSet<>(identifiers);
 
-        // Grouping by class
-        Map<Class<?>, List<Key>> groupedByClass = groupByClass();
+        if (identifiers.isEmpty()) {
+            return Collections.emptyMap();
+        }
 
         // Preparing type handlers and verifying that they are present
         HashMap<Class<?>, TypeHandler> typeHandlers = new HashMap<>();
@@ -133,10 +189,16 @@ public class TransactionalRepository<Key extends Enum<Key> & KeySpec> extends Ab
      * @throws SQLException On database error.
      */
     public void delete(Connection connection, long id, Collection<Key> keys) throws SQLException {
+        Objects.requireNonNull(connection, "connection");
+
         // Deduplication
         keys = keys instanceof Set<?>
                 ? keys
                 : new HashSet<>(keys);
+
+        if (keys.isEmpty()) {
+            return;
+        }
 
         // Grouping by class
         Map<Class<?>, List<Key>> groupedByClass = groupByClass(keys);
