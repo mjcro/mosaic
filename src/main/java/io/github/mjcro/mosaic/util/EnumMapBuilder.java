@@ -23,11 +23,11 @@ public class EnumMapBuilder<Key extends Enum<Key> & KeySpec> {
      * @param clazz Enumeration class name.
      * @return Builder.
      */
-    public static <X extends Enum<X> & KeySpec> EnumMapBuilder<X> ofClass(final Class<X> clazz) {
+    public static <X extends Enum<X> & KeySpec> EnumMapBuilder<X> ofClass(Class<X> clazz) {
         return new EnumMapBuilder<>(new EnumMap<>(Objects.requireNonNull(clazz, "clazz")));
     }
 
-    private EnumMapBuilder(final EnumMap<Key, List<Object>> data) {
+    private EnumMapBuilder(EnumMap<Key, List<Object>> data) {
         this.map = data;
     }
 
@@ -45,7 +45,7 @@ public class EnumMapBuilder<Key extends Enum<Key> & KeySpec> {
      * @param value Map value.
      * @return Builder itself.
      */
-    public EnumMapBuilder<Key> putSingle(final Key key, final Object value) {
+    public EnumMapBuilder<Key> putSingle(Key key, Object value) {
         this.map.put(key, Collections.singletonList(value));
         return this;
     }
@@ -58,7 +58,7 @@ public class EnumMapBuilder<Key extends Enum<Key> & KeySpec> {
      * @param value Map value.
      * @return Builder itself.
      */
-    public EnumMapBuilder<Key> putSingleIfPresent(final Key key, final Object value) {
+    public EnumMapBuilder<Key> putSingleIfPresent(Key key, Object value) {
         if (value instanceof Optional<?>) {
             Optional<?> optional = (Optional<?>) value;
             if (optional.isPresent()) {

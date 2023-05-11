@@ -72,7 +72,7 @@ public class MySqlPersistentWithCreationTimeSeconds extends MySqlLayout {
             Collection<Key> keys
     ) throws SQLException {
         HashMap<Integer, Key> reverseMap = new HashMap<>();
-        for (final Key key : keys) {
+        for (Key key : keys) {
             reverseMap.put(key.getTypeId(), key);
         }
 
@@ -112,10 +112,10 @@ public class MySqlPersistentWithCreationTimeSeconds extends MySqlLayout {
         Map<Long, Map<Key, List<Object>>> response = new HashMap<>();
         int offset = 1;
         try (PreparedStatement stmt = connection.prepareStatement(sb.toString())) {
-            for (final Long id : linkIds) {
+            for (Long id : linkIds) {
                 stmt.setLong(offset++, id);
             }
-            for (final Key key : keys) {
+            for (Key key : keys) {
                 stmt.setInt(offset++, key.getTypeId());
             }
 
@@ -197,7 +197,7 @@ public class MySqlPersistentWithCreationTimeSeconds extends MySqlLayout {
         int offset = 1;
         try (PreparedStatement stmt = connection.prepareStatement(sb.toString())) {
             for (Map.Entry<? extends KeySpec, List<Object>> entry : values.entrySet()) {
-                for (final Object value : entry.getValue()) {
+                for (Object value : entry.getValue()) {
                     stmt.setLong(offset++, linkId);
                     stmt.setInt(offset++, entry.getKey().getTypeId());
                     stmt.setInt(offset++, 1);

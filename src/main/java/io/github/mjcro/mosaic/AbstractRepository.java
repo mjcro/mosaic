@@ -2,6 +2,8 @@ package io.github.mjcro.mosaic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +25,9 @@ abstract class AbstractRepository<Key extends Enum<Key> & KeySpec> {
      * @param tablePrefix         Database table prefix.
      */
     protected AbstractRepository(
-            final TypeHandlerResolver typeHandlerResolver,
-            final Class<Key> clazz,
-            final String tablePrefix
+            TypeHandlerResolver typeHandlerResolver,
+            Class<Key> clazz,
+            String tablePrefix
     ) {
         this.registeredTypes = Objects.requireNonNull(typeHandlerResolver, "registeredTypes");
         this.clazz = Objects.requireNonNull(clazz, "clazz");
@@ -38,7 +40,11 @@ abstract class AbstractRepository<Key extends Enum<Key> & KeySpec> {
      * @param keys Keys collection.
      * @return Map of grouped per class keys.
      */
-    protected Map<Class<?>, List<Key>> groupByClass(Iterable<Key> keys) {
+    protected Map<Class<?>, List<Key>> groupByClass(Collection<Key> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
         HashMap<Class<?>, List<Key>> grouped = new HashMap<>();
         for (Key key : keys) {
             if (!grouped.containsKey(key.getDataClass())) {
@@ -65,8 +71,12 @@ abstract class AbstractRepository<Key extends Enum<Key> & KeySpec> {
      * @return Map of grouped per class key value pairs.
      */
     protected Map<Class<?>, Map<Key, List<Object>>> groupByClass(Map<Key, List<Object>> values) {
+        if (values == null || values.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
         HashMap<Class<?>, Map<Key, List<Object>>> grouped = new HashMap<>();
-        for (final Map.Entry<Key, List<Object>> entry : values.entrySet()) {
+        for (Map.Entry<Key, List<Object>> entry : values.entrySet()) {
             Class<?> clazz = entry.getKey().getDataClass();
             if (!grouped.containsKey(clazz)) {
                 grouped.put(clazz, new HashMap<>());

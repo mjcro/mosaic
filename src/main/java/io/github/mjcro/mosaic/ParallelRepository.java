@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,11 +35,11 @@ public class ParallelRepository<Key extends Enum<Key> & KeySpec> extends Abstrac
      * @param tablePrefix         Database table prefix.
      */
     public ParallelRepository(
-            final ExecutorService executorService,
-            final ConnectionProvider connectionProvider,
-            final TypeHandlerResolver typeHandlerResolver,
-            final Class<Key> clazz,
-            final String tablePrefix
+            ExecutorService executorService,
+            ConnectionProvider connectionProvider,
+            TypeHandlerResolver typeHandlerResolver,
+            Class<Key> clazz,
+            String tablePrefix
     ) {
         super(connectionProvider, typeHandlerResolver, clazz, tablePrefix);
         this.executorService = Objects.requireNonNull(executorService, "executorService");
@@ -63,7 +64,7 @@ public class ParallelRepository<Key extends Enum<Key> & KeySpec> extends Abstrac
         }
 
         ArrayList<Future<?>> futures = new ArrayList<>();
-        for (final Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
+        for (Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
             Future<?> future = executorService.submit(() -> {
                 try (Connection connection = connectionProvider.getConnection()) {
                     typeHandlers.get(entry.getKey()).store(
@@ -88,6 +89,10 @@ public class ParallelRepository<Key extends Enum<Key> & KeySpec> extends Abstrac
             Collection<Long> identifiers,
             Map<Class<?>, List<Key>> groupedByClass
     ) throws SQLException {
+        if (identifiers == null || identifiers.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
         // Deduplication
         Collection<Long> identifierSet = identifiers instanceof Set<?>
                 ? identifiers
@@ -139,6 +144,10 @@ public class ParallelRepository<Key extends Enum<Key> & KeySpec> extends Abstrac
 
     @Override
     public void delete(long id, Collection<Key> keys) throws SQLException {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+
         // Deduplication
         keys = keys instanceof Set<?>
                 ? keys

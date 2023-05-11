@@ -24,11 +24,11 @@ public interface Layout {
      * @throws SQLException On database error.
      */
     <Key extends KeySpec> Map<Long, Map<Key, List<Object>>> findByLinkId(
-            final Mapper mapper,
-            final Connection connection,
-            final String tableName,
-            final Collection<Long> linkIds,
-            final Collection<Key> keys
+            Mapper mapper,
+            Connection connection,
+            String tableName,
+            Collection<Long> linkIds,
+            Collection<Key> keys
     ) throws SQLException;
 
     /**
@@ -42,11 +42,11 @@ public interface Layout {
      * @throws SQLException On database error.
      */
     void store(
-            final Mapper mapper,
-            final Connection connection,
-            final String tableName,
-            final long linkId,
-            final Map<? extends KeySpec, List<Object>> values
+            Mapper mapper,
+            Connection connection,
+            String tableName,
+            long linkId,
+            Map<? extends KeySpec, List<Object>> values
     ) throws SQLException;
 
     /**

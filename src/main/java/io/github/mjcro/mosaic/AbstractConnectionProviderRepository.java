@@ -23,10 +23,10 @@ public abstract class AbstractConnectionProviderRepository<Key extends Enum<Key>
      * @param tablePrefix         Database table prefix.
      */
     public AbstractConnectionProviderRepository(
-            final ConnectionProvider connectionProvider,
-            final TypeHandlerResolver typeHandlerResolver,
-            final Class<Key> clazz,
-            final String tablePrefix
+            ConnectionProvider connectionProvider,
+            TypeHandlerResolver typeHandlerResolver,
+            Class<Key> clazz,
+            String tablePrefix
     ) {
         super(typeHandlerResolver, clazz, tablePrefix);
         this.connectionProvider = Objects.requireNonNull(connectionProvider, "connectionProvider");

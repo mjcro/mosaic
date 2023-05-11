@@ -24,7 +24,7 @@ import java.util.Map;
 public class TransactionalRepositoryTest extends BaseRepositoryTest {
     @Test
     public void testAll() throws SQLException {
-        Connection connection = DriverManager.getConnection("jdbc:h2:mem:mosaic1;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/repositoryTest.sql'");
+        Connection connection = DriverManager.getConnection("jdbc:h2:mem:mosaic3;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/test/resources/repositoryTest.sql'");
 
         // Initializing data provider
         TransactionalRepository<Key> repository = new TransactionalRepository<>(

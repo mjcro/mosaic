@@ -25,16 +25,20 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractConnect
      * @param tablePrefix         Database table prefix.
      */
     public Repository(
-            final ConnectionProvider connectionProvider,
-            final TypeHandlerResolver typeHandlerResolver,
-            final Class<Key> clazz,
-            final String tablePrefix
+            ConnectionProvider connectionProvider,
+            TypeHandlerResolver typeHandlerResolver,
+            Class<Key> clazz,
+            String tablePrefix
     ) {
         super(connectionProvider, typeHandlerResolver, clazz, tablePrefix);
     }
 
     @Override
     public void store(long id, Map<Key, List<Object>> values) throws SQLException {
+        if (values == null || values.isEmpty()) {
+            return;
+        }
+
         // Grouping by class
         Map<Class<?>, Map<Key, List<Object>>> groupedByClass = groupByClass(values);
 
@@ -101,6 +105,10 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractConnect
 
     @Override
     public void delete(long id, Collection<Key> keys) throws SQLException {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+
         // Deduplication
         keys = keys instanceof Set<?>
                 ? keys

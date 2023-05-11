@@ -10,7 +10,7 @@ public class UnexpectedValueException extends MosaicException {
      *
      * @param value Unexpected value, can be null.
      */
-    public UnexpectedValueException(final Object value) {
+    public UnexpectedValueException(Object value) {
         super(
                 value == null
                         ? "Unexpected null value"

@@ -27,9 +27,9 @@ public class TransactionalRepository<Key extends Enum<Key> & KeySpec> extends Ab
      * @param tablePrefix         Database table prefix.
      */
     public TransactionalRepository(
-            final TypeHandlerResolver typeHandlerResolver,
-            final Class<Key> clazz,
-            final String tablePrefix
+            TypeHandlerResolver typeHandlerResolver,
+            Class<Key> clazz,
+            String tablePrefix
     ) {
         super(typeHandlerResolver, clazz, tablePrefix);
     }

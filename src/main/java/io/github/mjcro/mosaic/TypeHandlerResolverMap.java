@@ -23,7 +23,7 @@ public class TypeHandlerResolverMap implements TypeHandlerResolver {
      * @param typeHandler Type handler.
      * @return Self.
      */
-    public TypeHandlerResolverMap with(final Class<?> clazz, final TypeHandler typeHandler) {
+    public TypeHandlerResolverMap with(Class<?> clazz, TypeHandler typeHandler) {
         map.put(
                 Objects.requireNonNull(clazz, "clazz"),
                 Objects.requireNonNull(typeHandler, "typeHandler")
