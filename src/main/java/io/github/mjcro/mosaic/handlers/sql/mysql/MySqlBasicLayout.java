@@ -48,7 +48,7 @@ public abstract class MySqlBasicLayout extends MySqlLayout {
             String tableName,
             Collection<Long> linkIds,
             Collection<Key> keys,
-            StringBuilderConsumer injectWhere
+            WhereClauseInjector injectWhere
     ) throws SQLException {
         HashMap<Integer, Key> reverseMap = new HashMap<>();
         for (Key key : keys) {
@@ -238,7 +238,7 @@ public abstract class MySqlBasicLayout extends MySqlLayout {
     }
 
     @FunctionalInterface
-    public interface StringBuilderConsumer {
+    public interface WhereClauseInjector {
         void accept(StringBuilder sb) throws SQLException;
     }
 
