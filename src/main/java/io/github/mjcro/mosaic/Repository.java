@@ -2,7 +2,6 @@ package io.github.mjcro.mosaic;
 
 import io.github.mjcro.interfaces.sql.ConnectionProvider;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,7 +48,7 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractConnect
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionProvider.getConnection()) {
+        connectionProvider.invokeWithConnection(connection -> {
             for (Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
                 typeHandlers.get(entry.getKey()).store(
                         connection,
@@ -58,7 +57,7 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractConnect
                         new HashMap<>(entry.getValue())
                 );
             }
-        }
+        });
     }
 
     @Override
@@ -71,7 +70,7 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractConnect
         }
 
         // Deduplication
-        identifiers = identifiers instanceof Set<?>
+        Collection<Long> finalIdentifiers = identifiers instanceof Set<?>
                 ? identifiers
                 : new HashSet<>(identifiers);
 
@@ -83,12 +82,12 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractConnect
         }
 
         HashMap<Long, Map<Key, List<Object>>> combined = new HashMap<>();
-        try (Connection connection = connectionProvider.getConnection()) {
+        connectionProvider.invokeWithConnection(connection -> {
             for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
                 Map<Long, Map<Key, List<Object>>> data = entry.getValue().findByLinkId(
                         connection,
                         tablePrefix,
-                        identifiers,
+                        finalIdentifiers,
                         groupedByClass.get(entry.getKey())
                 );
                 for (Map.Entry<Long, Map<Key, List<Object>>> datum : data.entrySet()) {
@@ -98,7 +97,7 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractConnect
                     combined.get(datum.getKey()).putAll(datum.getValue());
                 }
             }
-        }
+        });
 
         return combined;
     }
@@ -124,10 +123,10 @@ public class Repository<Key extends Enum<Key> & KeySpec> extends AbstractConnect
             typeHandlers.put(clazz, handler);
         }
 
-        try (Connection connection = connectionProvider.getConnection()) {
+        connectionProvider.invokeWithConnection(connection -> {
             for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
                 entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
             }
-        }
+        });
     }
 }

@@ -1,5 +1,6 @@
 package io.github.mjcro.mosaic;
 
+import io.github.mjcro.interfaces.sql.ConnectionConsumer;
 import io.github.mjcro.interfaces.sql.ConnectionProvider;
 
 import java.sql.Connection;
@@ -66,13 +67,15 @@ public class ParallelRepository<Key extends Enum<Key> & KeySpec> extends Abstrac
         ArrayList<Future<?>> futures = new ArrayList<>();
         for (Map.Entry<Class<?>, Map<Key, List<Object>>> entry : groupedByClass.entrySet()) {
             Future<?> future = executorService.submit(() -> {
-                try (Connection connection = connectionProvider.getConnection()) {
-                    typeHandlers.get(entry.getKey()).store(
-                            connection,
-                            tablePrefix,
-                            id,
-                            new HashMap<>(entry.getValue())
-                    );
+                try {
+                    connectionProvider.invokeWithConnection(connection -> {
+                        typeHandlers.get(entry.getKey()).store(
+                                connection,
+                                tablePrefix,
+                                id,
+                                new HashMap<>(entry.getValue())
+                        );
+                    });
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
@@ -110,15 +113,21 @@ public class ParallelRepository<Key extends Enum<Key> & KeySpec> extends Abstrac
         ArrayList<Future<?>> futures = new ArrayList<>();
         for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
             Future<?> future = executorService.submit(() -> {
-                try (Connection connection = connectionProvider.getConnection()) {
-                    Map<Long, Map<Key, List<Object>>> data = entry.getValue().findByLinkId(
-                            connection,
-                            tablePrefix,
-                            identifierSet,
-                            groupedByClass.get(entry.getKey())
-                    );
-                    responses.put(data);
-                } catch (SQLException | InterruptedException e) {
+                try {
+                    connectionProvider.invokeWithConnection(connection -> {
+                        Map<Long, Map<Key, List<Object>>> data = entry.getValue().findByLinkId(
+                                connection,
+                                tablePrefix,
+                                identifierSet,
+                                groupedByClass.get(entry.getKey())
+                        );
+                        try {
+                            responses.put(data);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -166,8 +175,10 @@ public class ParallelRepository<Key extends Enum<Key> & KeySpec> extends Abstrac
         ArrayList<Future<?>> futures = new ArrayList<>();
         for (Map.Entry<Class<?>, TypeHandler> entry : typeHandlers.entrySet()) {
             Future<?> future = executorService.submit(() -> {
-                try (Connection connection = connectionProvider.getConnection()) {
-                    entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
+                try {
+                    connectionProvider.invokeWithConnection(connection -> {
+                        entry.getValue().delete(connection, tablePrefix, id, groupedByClass.get(entry.getKey()));
+                    });
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
