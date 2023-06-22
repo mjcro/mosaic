@@ -6,6 +6,16 @@ CREATE TABLE `unitTestString`
     `value`  varchar(100) not null
 );
 
+CREATE TABLE `unitTestStringPersistent`
+(
+    `id`           int            not null auto_increment primary key,
+    `linkId`       bigint         not null,
+    `typeId`       smallint       not null,
+    `active`       tinyint        not null,
+    `time`         bigint         not null,
+    `value`        varchar(100)   not null
+);
+
 CREATE TABLE `unitTestLong`
 (
     `id`     int      not null auto_increment primary key,

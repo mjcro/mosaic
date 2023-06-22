@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Basic utility MySQL layout.
@@ -139,7 +140,7 @@ public abstract class MySqlBasicLayout extends MySqlLayout {
      * @param connection        Database connection.
      * @param tableName         Database table name.
      * @param linkId            Link identifier.
-     * @param values            Values to store.
+     * @param values0           Values to store.
      * @param additionalColumns Additional columns to store also.
      * @throws SQLException On database error.
      */
@@ -148,11 +149,19 @@ public abstract class MySqlBasicLayout extends MySqlLayout {
             Connection connection,
             String tableName,
             long linkId,
-            Map<? extends KeySpec, List<Object>> values,
+            Map<? extends KeySpec, List<Object>> values0,
             AdditionalColumn... additionalColumns
     ) throws SQLException {
         // Deleting previous values
-        delete(connection, tableName, linkId, values.keySet());
+        delete(connection, tableName, linkId, values0.keySet());
+
+        // Filtering empty values and checking that are
+        Map<? extends KeySpec, List<Object>> values = values0.entrySet().stream()
+                .filter($ -> !$.getValue().isEmpty())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (values.isEmpty()) {
+            return;
+        }
 
         String[] columns = mapper.getColumnNames();
 
