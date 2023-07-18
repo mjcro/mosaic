@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -158,7 +159,7 @@ public abstract class MySqlBasicLayout extends MySqlLayout {
         // Filtering empty values and checking that are
         Map<? extends KeySpec, List<Object>> values = values0.entrySet().stream()
                 .filter($ -> !$.getValue().isEmpty())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (x, y) -> x, LinkedHashMap::new));
         if (values.isEmpty()) {
             return;
         }

@@ -6,7 +6,7 @@
 
     <groupId>io.github.mjcro</groupId>
     <artifactId>mosaic</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
 
     <name>MicroJ Mosaic</name>
     <description>Vertical tables micro framework</description>
