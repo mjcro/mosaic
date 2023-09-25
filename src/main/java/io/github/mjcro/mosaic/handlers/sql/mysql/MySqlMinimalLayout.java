@@ -84,6 +84,6 @@ public class MySqlMinimalLayout extends MySqlBasicLayout {
     ) throws SQLException {
         StringBuilder sb = new StringBuilder();
         sb.append("DELETE FROM ").append(escapeName(tableName));
-        appendWhereAndExecute(sb, connection, linkId, keys);
+        appendWhereAndExecute(sb, connection, linkId, null, keys);
     }
 }

@@ -108,6 +108,6 @@ public class MySqlPersistentWithCreationTimeSeconds extends MySqlBasicLayout {
     ) throws SQLException {
         StringBuilder sb = new StringBuilder();
         sb.append("UPDATE ").append(tableName).append(" SET ").append(escapeName(columnIsActive)).append("=0");
-        appendWhereAndExecute(sb, connection, linkId, keys);
+        appendWhereAndExecute(sb, connection, linkId, null, keys);
     }
 }

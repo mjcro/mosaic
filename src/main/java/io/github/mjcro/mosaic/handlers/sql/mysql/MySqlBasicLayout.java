@@ -214,16 +214,18 @@ public abstract class MySqlBasicLayout extends MySqlLayout {
      * Utility method to be used in delete statements.
      * Appends WHERE condition and executes query.
      *
-     * @param sb         String builder with query prefix.
-     * @param connection Database connection.
-     * @param linkId     Link identifier.
-     * @param keys       Keys to delete.
+     * @param sb                  String builder with query prefix.
+     * @param connection          Database connection.
+     * @param linkId              Link identifier.
+     * @param prependPlaceholders Placeholders values to prepend.
+     * @param keys                Keys to delete.
      * @throws SQLException On database error.
      */
     protected void appendWhereAndExecute(
             StringBuilder sb,
             Connection connection,
             long linkId,
+            Object[] prependPlaceholders,
             Collection<? extends KeySpec> keys
     ) throws SQLException {
         sb.append(" WHERE ").append(escapeName(columnLinkId)).append(" = ? AND ");
@@ -238,6 +240,11 @@ public abstract class MySqlBasicLayout extends MySqlLayout {
 
         int offset = 1;
         try (PreparedStatement stmt = connection.prepareStatement(sb.toString())) {
+            if (prependPlaceholders != null && prependPlaceholders.length > 0) {
+                for (Object p : prependPlaceholders) {
+                    stmt.setObject(offset++, p);
+                }
+            }
             stmt.setLong(offset++, linkId);
             for (KeySpec key : keys) {
                 stmt.setInt(offset++, key.getTypeId());
