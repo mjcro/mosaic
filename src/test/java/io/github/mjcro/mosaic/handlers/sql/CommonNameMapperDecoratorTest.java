@@ -1,33 +1,34 @@
 package io.github.mjcro.mosaic.handlers.sql;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.junit.jupiter.api.Assertions;
+
 public class CommonNameMapperDecoratorTest {
     @Test
     public void testWithCommonName() {
         Mapper mapper = new CustomMapper();
-        Assert.assertEquals(mapper.getCommonName(), "CustomColumn");
+        Assertions.assertEquals("CustomColumn", mapper.getCommonName());
 
         // First decoration
         Mapper decorated = mapper.withCommonName("NewCommonName");
-        Assert.assertEquals(decorated.getCommonName(), "NewCommonName");
-        Assert.assertTrue(decorated instanceof CommonNameMapperDecorator);
+        Assertions.assertEquals("NewCommonName", decorated.getCommonName());
+        Assertions.assertTrue(decorated instanceof CommonNameMapperDecorator);
 
         CommonNameMapperDecorator commonNameMapperDecorator = (CommonNameMapperDecorator) decorated;
-        Assert.assertSame(commonNameMapperDecorator.getDecorated(), mapper);
+        Assertions.assertSame(mapper, commonNameMapperDecorator.getDecorated());
 
         // Second decoration
         decorated = decorated.withCommonName("SecondDecoration");
-        Assert.assertEquals(decorated.getCommonName(), "SecondDecoration");
-        Assert.assertTrue(decorated instanceof CommonNameMapperDecorator);
+        Assertions.assertEquals("SecondDecoration", decorated.getCommonName());
+        Assertions.assertTrue(decorated instanceof CommonNameMapperDecorator);
 
         commonNameMapperDecorator = (CommonNameMapperDecorator) decorated;
-        Assert.assertSame(commonNameMapperDecorator.getDecorated(), mapper);
+        Assertions.assertSame(mapper, commonNameMapperDecorator.getDecorated());
     }
 
     private static class CustomMapper implements Mapper {

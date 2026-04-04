@@ -2,7 +2,7 @@ package io.github.mjcro.mosaic.handlers.sql.mysql;
 
 import io.github.mjcro.mosaic.KeySpec;
 import io.github.mjcro.mosaic.handlers.sql.mappers.StringMapper;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

@@ -7,8 +7,7 @@ import io.github.mjcro.mosaic.handlers.sql.mappers.StringMapper;
 import io.github.mjcro.mosaic.handlers.sql.mysql.MySqlMinimalLayout;
 import io.github.mjcro.mosaic.handlers.sql.mysql.MySqlPersistentWithCreationTimeSeconds;
 import io.github.mjcro.mosaic.util.EnumMapBuilder;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -20,6 +19,8 @@ import java.util.Collections;
 import java.util.Currency;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.jupiter.api.Assertions;
 
 public class TransactionalRepositoryTest extends BaseRepositoryTest {
     @Test
@@ -39,7 +40,7 @@ public class TransactionalRepositoryTest extends BaseRepositoryTest {
         );
 
         // Reading non-existing entity
-        Assert.assertTrue(repository.findById(connection, 8).isEmpty());
+        Assertions.assertTrue(repository.findById(connection, 8).isEmpty());
 
         // Creating entity
         Map<Key, List<Object>> entity1 = EnumMapBuilder.ofClass(Key.class)
@@ -54,33 +55,33 @@ public class TransactionalRepositoryTest extends BaseRepositoryTest {
 
         // Reading created entity
         Map<Key, List<Object>> read = repository.findById(connection, 8);
-        Assert.assertFalse(read.isEmpty());
+        Assertions.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
 
         // Partial read single key
         read = repository.findById(connection, 8, Collections.singleton(Key.LAST_NAME));
-        Assert.assertFalse(read.isEmpty());
-        Assert.assertEquals(read.size(), 1);
-        Assert.assertTrue(read.containsKey(Key.LAST_NAME));
-        Assert.assertFalse(read.get(Key.LAST_NAME).isEmpty());
-        Assert.assertEquals(read.get(Key.LAST_NAME).get(0), "Smith");
+        Assertions.assertFalse(read.isEmpty());
+        Assertions.assertEquals(1, read.size());
+        Assertions.assertTrue(read.containsKey(Key.LAST_NAME));
+        Assertions.assertFalse(read.get(Key.LAST_NAME).isEmpty());
+        Assertions.assertEquals("Smith", read.get(Key.LAST_NAME).get(0));
 
         // Partial read several keys
         read = repository.findById(connection, 8, Arrays.asList(Key.LAST_NAME, Key.DISCOUNT_PERCENT));
-        Assert.assertFalse(read.isEmpty());
-        Assert.assertEquals(read.size(), 2);
-        Assert.assertTrue(read.containsKey(Key.LAST_NAME));
-        Assert.assertFalse(read.get(Key.LAST_NAME).isEmpty());
-        Assert.assertEquals(read.get(Key.LAST_NAME).get(0), "Smith");
-        Assert.assertTrue(read.containsKey(Key.DISCOUNT_PERCENT));
-        Assert.assertFalse(read.get(Key.DISCOUNT_PERCENT).isEmpty());
-        Assert.assertEquals(read.get(Key.DISCOUNT_PERCENT).get(0), BigDecimal.valueOf(0.5));
+        Assertions.assertFalse(read.isEmpty());
+        Assertions.assertEquals(2, read.size());
+        Assertions.assertTrue(read.containsKey(Key.LAST_NAME));
+        Assertions.assertFalse(read.get(Key.LAST_NAME).isEmpty());
+        Assertions.assertEquals("Smith", read.get(Key.LAST_NAME).get(0));
+        Assertions.assertTrue(read.containsKey(Key.DISCOUNT_PERCENT));
+        Assertions.assertFalse(read.get(Key.DISCOUNT_PERCENT).isEmpty());
+        Assertions.assertEquals(BigDecimal.valueOf(0.5), read.get(Key.DISCOUNT_PERCENT).get(0));
 
         // Performing partial delete
         repository.delete(connection, 8, Collections.singleton(Key.LAST_NAME));
         entity1.remove(Key.LAST_NAME);
         read = repository.findById(connection, 8);
-        Assert.assertFalse(read.isEmpty());
+        Assertions.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
 
         // Updating
@@ -93,12 +94,12 @@ public class TransactionalRepositoryTest extends BaseRepositoryTest {
         repository.store(connection, 8, update);
         entity1.putAll(update);
         read = repository.findById(connection, 8);
-        Assert.assertFalse(read.isEmpty());
+        Assertions.assertFalse(read.isEmpty());
         assertResultEquals(read, entity1);
 
         // Performing full delete
         repository.delete(connection, 8);
         read = repository.findById(connection, 8);
-        Assert.assertTrue(read.isEmpty());
+        Assertions.assertTrue(read.isEmpty());
     }
 }

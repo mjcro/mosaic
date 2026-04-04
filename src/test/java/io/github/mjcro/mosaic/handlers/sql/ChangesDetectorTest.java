@@ -1,7 +1,6 @@
 package io.github.mjcro.mosaic.handlers.sql;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.junit.jupiter.api.Assertions;
 
 public class ChangesDetectorTest {
     @Test
@@ -30,28 +31,28 @@ public class ChangesDetectorTest {
         ChangesDetector<Integer, String> detector = new ChangesDetector<>(valuesToStore, dataFromDatabase);
 
         Map<String, List<Object>> insert = detector.calculateValuesToInsert();
-        Assert.assertEquals(insert.size(), 3);
-        Assert.assertNotNull(insert.get("id"));
-        Assert.assertEquals(insert.get("id").size(), 1);
-        Assert.assertEquals(insert.get("id").get(0), 10L);
-        Assert.assertNotNull(insert.get("type"));
-        Assert.assertEquals(insert.get("type").size(), 2);
-        Assert.assertEquals(insert.get("type").get(0), "one");
-        Assert.assertEquals(insert.get("type").get(1), "hundred");
-        Assert.assertNotNull(insert.get("relationId"));
-        Assert.assertEquals(insert.get("relationId").size(), 1);
-        Assert.assertEquals(insert.get("relationId").get(0), 999L);
+        Assertions.assertEquals(3, insert.size());
+        Assertions.assertNotNull(insert.get("id"));
+        Assertions.assertEquals(1, insert.get("id").size());
+        Assertions.assertEquals(10L, insert.get("id").get(0));
+        Assertions.assertNotNull(insert.get("type"));
+        Assertions.assertEquals(2, insert.get("type").size());
+        Assertions.assertEquals("one", insert.get("type").get(0));
+        Assertions.assertEquals("hundred", insert.get("type").get(1));
+        Assertions.assertNotNull(insert.get("relationId"));
+        Assertions.assertEquals(1, insert.get("relationId").size());
+        Assertions.assertEquals(999L, insert.get("relationId").get(0));
 
         Set<Integer> delete = detector.calculateIdToDelete();
-        Assert.assertEquals(delete.size(), 2);
-        Assert.assertTrue(delete.contains(4));
-        Assert.assertTrue(delete.contains(11));
+        Assertions.assertEquals(2, delete.size());
+        Assertions.assertTrue(delete.contains(4));
+        Assertions.assertTrue(delete.contains(11));
 
         Set<Integer> intact = detector.calculateIdIntact();
-        Assert.assertEquals(intact.size(), 3);
-        Assert.assertTrue(intact.contains(3));
-        Assert.assertTrue(intact.contains(9));
-        Assert.assertTrue(intact.contains(10));
+        Assertions.assertEquals(3, intact.size());
+        Assertions.assertTrue(intact.contains(3));
+        Assertions.assertTrue(intact.contains(9));
+        Assertions.assertTrue(intact.contains(10));
     }
 
     @Test
@@ -63,18 +64,18 @@ public class ChangesDetectorTest {
         ChangesDetector<Integer, String> detector = new ChangesDetector<>(valuesToStore, Collections.emptyList());
 
         Map<String, List<Object>> insert = detector.calculateValuesToInsert();
-        Assert.assertEquals(insert.size(), 2);
-        Assert.assertNotNull(insert.get("id"));
-        Assert.assertEquals(insert.get("id").size(), 1);
-        Assert.assertEquals(insert.get("id").get(0), 10L);
-        Assert.assertNotNull(insert.get("parentId"));
-        Assert.assertEquals(insert.get("parentId").size(), 1);
-        Assert.assertEquals(insert.get("parentId").get(0), 2261L);
+        Assertions.assertEquals(2, insert.size());
+        Assertions.assertNotNull(insert.get("id"));
+        Assertions.assertEquals(1, insert.get("id").size());
+        Assertions.assertEquals(10L, insert.get("id").get(0));
+        Assertions.assertNotNull(insert.get("parentId"));
+        Assertions.assertEquals(1, insert.get("parentId").size());
+        Assertions.assertEquals(2261L, insert.get("parentId").get(0));
 
         Set<Integer> delete = detector.calculateIdToDelete();
-        Assert.assertTrue(delete.isEmpty());
+        Assertions.assertTrue(delete.isEmpty());
 
         Set<Integer> intact = detector.calculateIdIntact();
-        Assert.assertTrue(intact.isEmpty());
+        Assertions.assertTrue(intact.isEmpty());
     }
 }

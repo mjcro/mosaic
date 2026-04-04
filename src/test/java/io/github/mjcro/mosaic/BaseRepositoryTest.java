@@ -2,7 +2,6 @@ package io.github.mjcro.mosaic;
 
 import io.github.mjcro.mosaic.exceptions.UnexpectedValueException;
 import io.github.mjcro.mosaic.handlers.sql.Mapper;
-import org.testng.Assert;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
@@ -14,16 +13,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.junit.jupiter.api.Assertions;
+
 public abstract class BaseRepositoryTest {
     protected void assertResultEquals(Map<Key, List<Object>> actual, Map<Key, List<Object>> expected) {
-        Assert.assertEquals(actual.size(), expected.size(), "Expected and actual maps has different size");
+        Assertions.assertEquals(expected.size(), actual.size(), "Expected and actual maps has different size");
         for (Key key : expected.keySet()) {
-            Assert.assertTrue(actual.containsKey(key), "Actual result map missing key " + key);
+            Assertions.assertTrue(actual.containsKey(key), "Actual result map missing key " + key);
             List<Object> actualObjects = actual.get(key);
             List<Object> expectedObjects = expected.get(key);
-            Assert.assertEquals(actualObjects.size(), expectedObjects.size(), "Object size not equal for key " + key);
+            Assertions.assertEquals(expectedObjects.size(), actualObjects.size(), "Object size not equal for key " + key);
             for (Object expectedObject : expectedObjects) {
-                Assert.assertTrue(
+                Assertions.assertTrue(
                         actualObjects.contains(expectedObject),
                         "For key " + key + " missing expected " + expectedObject
                 );
