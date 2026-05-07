@@ -3,7 +3,7 @@ package io.github.mjcro.mosaic.stand;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.mjcro.interfaces.sql.ConnectionProvider;
-import io.github.mjcro.mosaic.DistributedLockingRepository;
+import io.github.mjcro.mosaic.DistributedWriteLockingRepositoryDecorator;
 import io.github.mjcro.mosaic.Repository;
 import io.github.mjcro.mosaic.TransactionalRepository;
 import io.github.mjcro.mosaic.TypeHandlerResolverMap;
@@ -119,7 +119,14 @@ public class Stand {
             for (int i = 0; i < locks.length; i++) {
                 locks[i] = new ReentrantLock();
             }
-            DistributedLockingRepository<Keys> repo = new DistributedLockingRepository<>(
+            DistributedWriteLockingRepositoryDecorator<Keys> repo = new DistributedWriteLockingRepositoryDecorator<>(
+                    new Repository<>(
+                            connectionProvider,
+                            new TypeHandlerResolverMap()
+                                    .with(Long.class, MySqlPersistentWithChangesAndCreationModificationTimeSeconds.DEFAULT, new LongMapper()),
+                            Keys.class,
+                            "changes"
+                    ),
                     (id, e) -> {
                         locks[(int) (id % locks.length)].lock();
                         try {
@@ -127,14 +134,19 @@ public class Stand {
                         } finally {
                             locks[(int) (id % locks.length)].unlock();
                         }
-                    },
-                    connectionProvider,
-                    new TypeHandlerResolverMap()
-                            .with(Long.class, MySqlPersistentWithChangesAndCreationModificationTimeSeconds.DEFAULT, new LongMapper()),
-                    Keys.class,
-                    "changes"
+                    }
             );
-            adapter = Adapter.ofAbstractConnectionProviderRepository(repo);
+            adapter = new Adapter() {
+                @Override
+                public void store(final long id, final Map<Keys, List<Object>> values) throws SQLException {
+                    repo.store(id, values);
+                }
+
+                @Override
+                public void delete(final long id) throws SQLException {
+                    repo.delete(id);
+                }
+            };
         } else {
             throw new IllegalArgumentException("Unknown mode " + mode);
         }
