@@ -67,6 +67,7 @@ public abstract class MySqlBasicLayout extends MySqlLayout {
 
         sb.append(" FROM ").append(escapeName(tableName)).append(" WHERE");
         if (injectWhere != null) {
+            sb.append(" ");
             injectWhere.accept(sb);
         }
         sb.append(" ").append(escapeName(columnLinkId)).append(" IN (");
