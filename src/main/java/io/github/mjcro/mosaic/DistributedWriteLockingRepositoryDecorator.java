@@ -1,6 +1,8 @@
 package io.github.mjcro.mosaic;
 
 import io.github.mjcro.interfaces.Decorator;
+import io.github.mjcro.interfaces.concurrency.DistributedLockExecutor;
+import io.github.mjcro.interfaces.exceptions.WithException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -19,22 +21,29 @@ import java.util.Objects;
  * collections short-circuit and never acquire a lock. Unlike the previous inheritance-based
  * variant this decorator can wrap any {@link AbstractConnectionProviderRepository} subclass,
  * including {@link Repository} and {@link ParallelRepository}.
+ * <p>
+ * Locking is delegated to {@link DistributedLockExecutor}, keyed by the entity identifier.
+ * That contract runs plain {@link Runnable} instances, so database failures raised inside the
+ * lock scope are carried across the callback boundary and rethrown to the caller unchanged.
+ * Failures to acquire the lock itself are whatever the executor implementation raises and
+ * propagate unwrapped.
  */
 public class DistributedWriteLockingRepositoryDecorator<Key extends Enum<Key> & KeySpec>
         implements Decorator<AbstractConnectionProviderRepository<Key>> {
     private final AbstractConnectionProviderRepository<Key> decorated;
-    private final DistributedLockExecutor distributedLockExecutor;
+    private final DistributedLockExecutor<? super Long> distributedLockExecutor;
 
     /**
      * Constructs new write-locking repository decorator.
      *
      * @param decorated               Underlying repository to delegate to. Not nullable.
      * @param distributedLockExecutor Executor used to acquire and release distributed locks
-     *                                around mutating operations. Not nullable.
+     *                                around mutating operations, keyed by entity identifier.
+     *                                Not nullable.
      */
     public DistributedWriteLockingRepositoryDecorator(
             @NonNull AbstractConnectionProviderRepository<Key> decorated,
-            @NonNull DistributedLockExecutor distributedLockExecutor
+            @NonNull DistributedLockExecutor<? super Long> distributedLockExecutor
     ) {
         this.decorated = Objects.requireNonNull(decorated, "decorated");
         this.distributedLockExecutor = Objects.requireNonNull(distributedLockExecutor, "distributedLockExecutor");
@@ -97,16 +106,13 @@ public class DistributedWriteLockingRepositoryDecorator<Key extends Enum<Key> & 
      *
      * @param id     Identifier of entity data belongs to.
      * @param values Data values to persist. Nullable; null or empty maps are skipped.
-     * @throws SQLException On database error or lock acquisition failure.
+     * @throws SQLException On database error.
      */
     public void store(long id, @Nullable Map<Key, List<Object>> values) throws SQLException {
         if (values == null || values.isEmpty()) {
             return;
         }
-        distributedLockExecutor.executeLocked(
-                id,
-                () -> getDecorated().store(id, values)
-        );
+        executeLocked(id, () -> getDecorated().store(id, values));
     }
 
     /**
@@ -115,16 +121,13 @@ public class DistributedWriteLockingRepositoryDecorator<Key extends Enum<Key> & 
      *
      * @param id   Entity identifier.
      * @param keys Keys to delete. Nullable; null or empty collections are skipped.
-     * @throws SQLException On database error or lock acquisition failure.
+     * @throws SQLException On database error.
      */
     public void delete(long id, @Nullable Collection<Key> keys) throws SQLException {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        distributedLockExecutor.executeLocked(
-                id,
-                () -> getDecorated().delete(id, keys)
-        );
+        executeLocked(id, () -> getDecorated().delete(id, keys));
     }
 
     /**
@@ -132,12 +135,61 @@ public class DistributedWriteLockingRepositoryDecorator<Key extends Enum<Key> & 
      * bound to the identifier.
      *
      * @param id Entity identifier.
-     * @throws SQLException On database error or lock acquisition failure.
+     * @throws SQLException On database error.
      */
     public void delete(long id) throws SQLException {
-        distributedLockExecutor.executeLocked(
-                id,
-                () -> getDecorated().delete(id)
-        );
+        executeLocked(id, () -> getDecorated().delete(id));
+    }
+
+    /**
+     * Runs given mutation while holding a distributed lock bound to the identifier.
+     * <p>
+     * {@link DistributedLockExecutor} accepts a {@link Runnable}, which cannot declare checked
+     * exceptions, so a database failure is carried out of the lock scope and rethrown as-is.
+     *
+     * @param id       Entity identifier the lock is bound to.
+     * @param mutation Mutation to run while the lock is held. Not nullable.
+     * @throws SQLException On database error raised by the mutation.
+     */
+    private void executeLocked(long id, Mutation mutation) throws SQLException {
+        try {
+            distributedLockExecutor.executeLocked(id, () -> {
+                try {
+                    mutation.run();
+                } catch (SQLException e) {
+                    throw new CarriedSQLException(e);
+                }
+            });
+        } catch (CarriedSQLException e) {
+            throw e.getException();
+        }
+    }
+
+    /**
+     * Mutating repository call able to report database failures.
+     */
+    @FunctionalInterface
+    private interface Mutation {
+        /**
+         * Performs the mutation.
+         *
+         * @throws SQLException On database error.
+         */
+        void run() throws SQLException;
+    }
+
+    /**
+     * Carries a {@link SQLException} across the unchecked {@link Runnable} boundary imposed by
+     * {@link DistributedLockExecutor}. Never escapes {@link #executeLocked(long, Mutation)}.
+     */
+    private static final class CarriedSQLException extends RuntimeException implements WithException<SQLException> {
+        private CarriedSQLException(SQLException cause) {
+            super(Objects.requireNonNull(cause, "cause"));
+        }
+
+        @Override
+        public @NonNull SQLException getException() {
+            return (SQLException) getCause();
+        }
     }
 }

@@ -1,6 +1,6 @@
 package io.github.mjcro.mosaic.stand;
 
-import io.github.mjcro.interfaces.sql.ConnectionProvider;
+import io.github.mjcro.interfaces.database.ConnectionProvider;
 import io.github.mjcro.mosaic.AbstractConnectionProviderRepository;
 import io.github.mjcro.mosaic.TransactionalRepository;
 

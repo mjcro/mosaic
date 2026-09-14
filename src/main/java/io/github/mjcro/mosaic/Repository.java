@@ -1,6 +1,6 @@
 package io.github.mjcro.mosaic;
 
-import io.github.mjcro.interfaces.sql.ConnectionProvider;
+import io.github.mjcro.interfaces.database.ConnectionProvider;
 
 import java.sql.SQLException;
 import java.util.Collection;

@@ -2,7 +2,8 @@ package io.github.mjcro.mosaic.stand;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import io.github.mjcro.interfaces.sql.ConnectionProvider;
+import io.github.mjcro.interfaces.concurrency.DistributedLockExecutor;
+import io.github.mjcro.interfaces.database.ConnectionProvider;
 import io.github.mjcro.mosaic.DistributedWriteLockingRepositoryDecorator;
 import io.github.mjcro.mosaic.Repository;
 import io.github.mjcro.mosaic.TransactionalRepository;
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 /**
  * Manual concurrency benchmark stand for repository implementations.
@@ -127,12 +129,16 @@ public class Stand {
                             Keys.class,
                             "changes"
                     ),
-                    (id, e) -> {
-                        locks[(int) (id % locks.length)].lock();
-                        try {
-                            e.execute();
-                        } finally {
-                            locks[(int) (id % locks.length)].unlock();
+                    new DistributedLockExecutor<Long>() {
+                        @Override
+                        public <R> R executeLocked(final Long lockingKey, final Supplier<R> supplier) {
+                            final ReentrantLock lock = locks[(int) (lockingKey % locks.length)];
+                            lock.lock();
+                            try {
+                                return supplier.get();
+                            } finally {
+                                lock.unlock();
+                            }
                         }
                     }
             );
