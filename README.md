@@ -82,6 +82,7 @@ Requires **Java 8+**. Tested on JDK 8, 11, 21 and 25.
 public enum UserKey implements KeySpec {
     FIRST_NAME(1, String.class),
     LAST_NAME(2, String.class),
+    TAG(3, String.class),          // may hold several values
     PRICING_PLAN(5, Long.class),
     CREATED_AT(11, Instant.class);
 
@@ -131,11 +132,69 @@ Map<UserKey, List<Object>> data = EnumMapBuilder.ofClass(UserKey.class)
 users.store(8L, data);
 
 Map<UserKey, List<Object>> read = users.findById(8L);
-Map<UserKey, List<Object>> some = users.findById(8L, List.of(UserKey.FIRST_NAME));
+Map<UserKey, List<Object>> some = users.findById(8L, Arrays.asList(UserKey.FIRST_NAME));
 
-users.delete(8L, List.of(UserKey.LAST_NAME));   // partial
-users.delete(8L);                                // full
+users.delete(8L, Arrays.asList(UserKey.LAST_NAME));   // partial
+users.delete(8L);                                     // full
 ```
+
+### Multi-valued keys
+
+The map value is a `List` because one key may hold several values — each becomes its own row,
+all sharing the same `linkId` and `typeId`. `EnumMapBuilder` only covers the single-value case;
+build the map directly for the rest:
+
+```java
+Map<UserKey, List<Object>> data = new EnumMap<>(UserKey.class);
+data.put(UserKey.TAG, Arrays.asList("vip", "beta", "eu"));   // three rows in userString
+users.store(8L, data);
+
+users.findById(8L).get(UserKey.TAG);   // [vip, beta, eu] — order is not guaranteed
+```
+
+`store` replaces the whole value set of every key it is given: rows for those keys are removed
+first, then the new ones are written. Keys absent from the map are left untouched, which is what
+makes partial updates possible.
+
+### Reading results
+
+`ResponseContainer` wraps a result map and unpacks the `List<Object>` values:
+
+```java
+ResponseContainer<UserKey> user = new ResponseContainer<>(users.findById(8L));
+
+Optional<String> first = user.getSingle(UserKey.FIRST_NAME, String.class);
+String           last  = user.mustGetSingle(UserKey.LAST_NAME, String.class);
+List<String>     tags  = user.getList(UserKey.TAG, String.class);
+```
+
+`getSingle` throws `IllegalStateException` if the key holds more than one value.
+
+## Schema
+
+Mosaic never creates or migrates tables — you own the DDL. One table per `(prefix, mapper common name)`
+pair, with the columns the layout expects plus the value column(s) the mapper declares.
+
+For `MySqlMinimalLayout`:
+
+```sql
+CREATE TABLE `userString` (
+    `id`     BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `linkId` BIGINT       NOT NULL,
+    `typeId` SMALLINT     NOT NULL,
+    `value`  VARCHAR(255) NOT NULL,
+    KEY `linkId` (`linkId`, `typeId`)
+);
+```
+
+`MySqlPersistentWithCreationTimeSeconds` adds `active TINYINT NOT NULL` and `time BIGINT NOT NULL`.
+`MySqlPersistentWithChangesAndCreationModificationTimeSeconds` adds `active TINYINT NOT NULL`,
+`created BIGINT NOT NULL` and `modified BIGINT NOT NULL`. Column names are constructor arguments,
+so they can be renamed to match an existing schema.
+
+Value columns should be `NOT NULL`: the mappers read through `ResultSet.getLong` / `getString` and
+cannot distinguish SQL `NULL` from `0` or from an absent row. Adding a new field to an entity means
+adding an enum constant — no migration — but introducing a new *Java type* does mean creating its table.
 
 ## Repositories
 
@@ -148,6 +207,20 @@ Different execution strategies are exposed as separate repository classes:
 | `ParallelRepository`                       | Fans per-class queries out to an `ExecutorService`.                         |
 | `DistributedWriteLockingRepositoryDecorator` | Composition decorator that wraps any of the above in a per-entity distributed lock around `store` / `delete`. Reads pass through unlocked. |
 
+The decorator locks through `io.github.mjcro.interfaces.concurrency.DistributedLockExecutor`, keyed by
+the entity identifier — supply any implementation backed by your lock of choice:
+
+```java
+AbstractConnectionProviderRepository<UserKey> users = new Repository<>(/* ... */);
+
+DistributedWriteLockingRepositoryDecorator<UserKey> locked =
+        new DistributedWriteLockingRepositoryDecorator<>(users, lockExecutor);
+```
+
+Its callbacks are `Runnable` / `Supplier` and cannot declare checked exceptions, so a database failure
+raised inside the lock scope is carried across that boundary and rethrown to the caller as the original
+`SQLException`. Anything the executor itself raises while acquiring the lock propagates unwrapped.
+
 ## Built-in SQL layouts
 
 | Layout                                                          | Behavior                                                                                   |
@@ -158,6 +231,37 @@ Different execution strategies are exposed as separate repository classes:
 
 Layouts can detect transactional context and append `FOR UPDATE` to reads.
 
+## Transactions
+
+A single `store` is not one statement. For every Java type involved it issues a `DELETE` (or an
+`UPDATE … active=0`) followed by an `INSERT`, and it touches one table per type. How those statements
+commit depends on the repository:
+
+| Repository                | Commit boundary                                                                              |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| `Repository`              | One connection per call, used as the provider hands it over — normally autocommit, so **each statement commits on its own**. A failed `INSERT` leaves the preceding `DELETE` committed, and a concurrent reader can observe the gap between them. |
+| `TransactionalRepository` | Whatever the caller's connection is in. Wrap the call in a transaction to make `store` atomic. |
+| `ParallelRepository`      | One connection *per Java type*, in parallel — atomicity across types is impossible by construction. |
+
+If a `store` must be all-or-nothing, use `TransactionalRepository` and manage the transaction yourself:
+
+```java
+try (Connection conn = connectionProvider.getConnection()) {
+    conn.setAutoCommit(false);
+    try {
+        users.store(conn, 8L, data);
+        conn.commit();
+    } catch (SQLException e) {
+        conn.rollback();
+        throw e;
+    }
+}
+```
+
+`DistributedWriteLockingRepositoryDecorator` serializes *writers* for the same entity id, which
+removes lost updates between concurrent `store` calls. It does not make a `store` atomic and does
+not hide the intermediate state from readers.
+
 ## Built-in mappers
 
 `StringMapper`, `LongMapper`, `InstantSecondsMapper`, `InstantMillisMapper`, `BigDecimalMapper`. Each defines a table suffix (e.g. `String`, `Long`, `Instant`) appended to the repository prefix. Override the suffix via `mapper.withCommonName("Discount")` to split a single Java type across multiple tables. For custom types, implement `Mapper` directly — single- or multi-column.
@@ -166,3 +270,7 @@ Layouts can detect transactional context and append `FOR UPDATE` to reads.
 
 - Not an ORM — no schema generation or migrations.
 - Each Java class maps to exactly one `(Layout, Mapper)` pair per repository; splitting a class across multiple tables requires distinct mappers with different common names.
+- `store` is not atomic unless you run it through `TransactionalRepository` inside your own transaction (see [Transactions](#transactions)).
+- No query-by-value: entities are reachable by `linkId` only. Searching by a stored value is the caller's job.
+- Table and column names are trusted, not sanitized. They come from your prefix, layout and mapper — never build them from user input.
+- The bundled layouts emit MySQL-flavored SQL (backtick quoting, `FOR UPDATE`). Other engines need their own `Layout`.

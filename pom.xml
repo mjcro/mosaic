@@ -6,7 +6,7 @@
 
     <groupId>io.github.mjcro</groupId>
     <artifactId>mosaic</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.0</version>
 
     <name>MicroJ Mosaic</name>
     <description>Vertical tables micro framework</description>
@@ -43,7 +43,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.7.0</version>
+                <version>0.11.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
